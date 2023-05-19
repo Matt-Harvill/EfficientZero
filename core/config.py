@@ -67,10 +67,10 @@ class BaseConfig(object):
                  value_loss_coeff: float = 1,
                  policy_loss_coeff: float = 1,
                  consistency_coeff: float = 1,
-                 proj_hid: int = 256,
-                 proj_out: int = 256,
+                 proj_hid: int = 64, # default is 256
+                 proj_out: int = 64, # default is 256
                  pred_hid: int = 64,
-                 pred_out: int = 256,
+                 pred_out: int = 64, # default is 256
                  value_support: DiscreteSupport = DiscreteSupport(-300, 300, delta=1),
                  reward_support: DiscreteSupport = DiscreteSupport(-300, 300, delta=1)):
         """Base Config for EfficietnZero

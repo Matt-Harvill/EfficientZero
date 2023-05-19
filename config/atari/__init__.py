@@ -20,7 +20,7 @@ class AtariConfig(BaseConfig):
             target_model_interval=200,
             save_ckpt_interval=10000,
             max_moves=12000,
-            test_max_moves=12000,
+            test_max_moves=1000, # default 12000
             history_length=400,
             discount=0.997,
             dirichlet_alpha=0.3,
@@ -133,7 +133,7 @@ class AtariConfig(BaseConfig):
     def new_game(self, seed=None, save_video=False, save_path=None, video_callable=None, uid=None, test=False, final_test=False):
         if test:
             if final_test:
-                max_moves = 108000 // self.frame_skip
+                max_moves = 12000 // self.frame_skip # default 108000 numerator
             else:
                 max_moves = self.test_max_moves
             env = make_atari(self.env_name, skip=self.frame_skip, max_episode_steps=max_moves)
