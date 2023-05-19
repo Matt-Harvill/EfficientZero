@@ -41,13 +41,17 @@ class MCTS(object):
             min_max_stats_lst.set_delta(self.config.value_delta_max)
             horizons = self.config.lstm_horizon_len
 
+            # Moved outside so we can keep track of all nodes across simulations
+            # prepare a result wrapper to transport results between python and c++ parts
+            results = tree.ResultsWrapper(num)
+
             for index_simulation in range(self.config.num_simulations):
                 hidden_states = []
                 hidden_states_c_reward = []
                 hidden_states_h_reward = []
 
-                # prepare a result wrapper to transport results between python and c++ parts
-                results = tree.ResultsWrapper(num)
+                # # prepare a result wrapper to transport results between python and c++ parts
+                # results = tree.ResultsWrapper(num)
                 # traverse to select actions for each root
                 # hidden_state_index_x_lst: the first index of leaf node states in hidden_state_pool
                 # hidden_state_index_y_lst: the second index of leaf node states in hidden_state_pool
@@ -74,6 +78,23 @@ class MCTS(object):
                         network_output = model.recurrent_inference(hidden_states, (hidden_states_c_reward, hidden_states_h_reward), last_actions)
                 else:
                     network_output = model.recurrent_inference(hidden_states, (hidden_states_c_reward, hidden_states_h_reward), last_actions)
+
+                print(search_lens)
+                # results.print_nodes()
+                # print('\n', network_output.value)
+                # print(network_output.value_prefix)
+                # print(network_output.policy_logits)
+                # softmax_policy = torch.softmax(torch.from_numpy(network_output.policy_logits).float(), dim=1)
+                # print(f'Softmax policy: {softmax_policy}')
+                # # print(network_output.hidden_state.shape)
+                # # print(network_output.reward_hidden[0].shape, network_output.reward_hidden[1].shape, len(network_output.reward_hidden))
+                # print('KL divergences:')
+                # import torch.nn.functional as F
+                # for i in range(num-1):
+                #     print(softmax_policy[i], softmax_policy[i+1])
+                #     KL = F.kl_div(softmax_policy[i].log(), softmax_policy[i+1])
+                #     print(float(KL))
+                input(f'printing roots and network_output in mcts.py (actually cnode.cpp)')
 
                 hidden_state_nodes = network_output.hidden_state
                 value_prefix_pool = network_output.value_prefix.reshape(-1).tolist()

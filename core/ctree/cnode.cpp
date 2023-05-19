@@ -386,11 +386,25 @@ namespace tree{
         int last_action = -1;
         float parent_q = 0.0;
         results.search_lens = std::vector<int>();
+
+        // Clear results for everything except all_nodes
+        results.nodes.clear();
+        for(int i = 0; i < results.num; ++i){
+            results.search_paths[i].clear();
+        }
+        results.hidden_state_index_x_lst.clear();
+        results.hidden_state_index_y_lst.clear();
+        results.last_actions.clear();
+        results.search_lens.clear();
+
         for(int i = 0; i < results.num; ++i){
             CNode *node = &(roots->roots[i]);
             int is_root = 1;
             int search_len = 0;
             results.search_paths[i].push_back(node);
+
+            // add node to all_nodes 
+            results.all_nodes.insert(node);
 
             while(node->expanded()){
                 float mean_q = node->get_mean_q(is_root, parent_q, discount);
@@ -404,6 +418,9 @@ namespace tree{
                 last_action = action;
                 results.search_paths[i].push_back(node);
                 search_len += 1;
+
+                // add node to all_nodes 
+                results.all_nodes.insert(node);
             }
 
             CNode* parent = results.search_paths[i][results.search_paths[i].size() - 2];
@@ -415,6 +432,23 @@ namespace tree{
             results.search_lens.push_back(search_len);
             results.nodes.push_back(node);
         }
+
+        // Logging for new nodes vs all nodes
+        int new_nodes_num = 0;
+        for(int i = 0; i < results.num; ++i){
+            std::vector<CNode*> nodes = results.search_paths[i];
+
+            for(int j=0; j < nodes.size(); ++j){
+                CNode* node = nodes[j];
+                std::cout << node->visit_count << ", ";
+                ++new_nodes_num;
+            }
+
+            std::cout << std::endl;
+            
+        }
+        std::cout << "number of new nodes " << new_nodes_num << std::endl;
+        std::cout << "number of total nodes " << results.all_nodes.size() << std::endl;
     }
 
 }

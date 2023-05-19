@@ -32,6 +32,10 @@ cdef class ResultsWrapper:
     def __cinit__(self, int num):
         self.cresults = CSearchResults(num)
 
+    # def print_nodes(self):
+    #     for node in self.cresults.nodes:
+    #         print(node.value(), node.get_trajectory(), node.get_children_distribution())
+
     def get_search_len(self):
         return self.cresults.search_lens
 

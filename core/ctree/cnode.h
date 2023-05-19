@@ -10,6 +10,7 @@
 #include <cmath>
 #include <sys/timeb.h>
 #include <sys/time.h>
+#include <set>
 
 const int DEBUG_MODE = 0;
 
@@ -65,6 +66,7 @@ namespace tree {
             std::vector<int> hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions, search_lens;
             std::vector<CNode*> nodes;
             std::vector<std::vector<CNode*>> search_paths;
+            std::set<CNode*> all_nodes;
 
             CSearchResults();
             CSearchResults(int num);
