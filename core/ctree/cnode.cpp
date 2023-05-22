@@ -607,7 +607,7 @@ namespace tree{
                 results.nodes[k].push_back(node);
             }
         }
-        results.print();
+        // results.print();
     }
 
 }
