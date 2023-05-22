@@ -5,6 +5,7 @@ import core.ctree.cytree as tree
 
 from torch.cuda.amp import autocast as autocast
 
+import time
 
 class MCTS(object):
     def __init__(self, config):
@@ -21,6 +22,12 @@ class MCTS(object):
         reward_hidden_roots: list
             the value prefix hidden states in LSTM of the roots
         """
+
+        # Number of searches per simulation
+        searches = 3
+
+        before_search = time.perf_counter()
+
         with torch.no_grad():
             model.eval()
 
@@ -37,28 +44,40 @@ class MCTS(object):
             # the index of each layer in the tree
             hidden_state_index_x = 0
             # minimax value storage
-            min_max_stats_lst = tree.MinMaxStatsList(num)
+            min_max_stats_lst = tree.MinMaxStatsList(num, searches)
             min_max_stats_lst.set_delta(self.config.value_delta_max)
             horizons = self.config.lstm_horizon_len
 
-            # Moved outside so we can keep track of all nodes across simulations
-            # prepare a result wrapper to transport results between python and c++ parts
-            results = tree.ResultsWrapper(num)
+            # # Moved outside so we can keep track of all nodes across simulations
+            # # prepare a result wrapper to transport results between python and c++ parts
+            # results = tree.ResultsWrapper(num)
 
             for index_simulation in range(self.config.num_simulations):
                 hidden_states = []
                 hidden_states_c_reward = []
                 hidden_states_h_reward = []
 
-                # # prepare a result wrapper to transport results between python and c++ parts
-                # results = tree.ResultsWrapper(num)
+                # prepare a result wrapper to transport results between python and c++ parts
+                results = tree.ResultsWrapper(num, searches)
                 # traverse to select actions for each root
                 # hidden_state_index_x_lst: the first index of leaf node states in hidden_state_pool
                 # hidden_state_index_y_lst: the second index of leaf node states in hidden_state_pool
                 # the hidden state of the leaf node is hidden_state_pool[x, y]; value prefix states are the same
+                
+                before_batch_traverse = time.perf_counter()
+                
                 hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions = tree.batch_traverse(roots, pb_c_base, pb_c_init, discount, min_max_stats_lst, results)
+                
+                after_batch_traverse = time.perf_counter()
+
+                input('finished batch_traverse')
+
+                # print(f'batch_traverse time: {after_batch_traverse - before_batch_traverse} seconds')
+
                 # obtain the search horizon for leaf nodes
                 search_lens = results.get_search_len()
+
+                before_model_inf = time.perf_counter()
 
                 # obtain the states for leaf nodes
                 for ix, iy in zip(hidden_state_index_x_lst, hidden_state_index_y_lst):
@@ -79,13 +98,29 @@ class MCTS(object):
                 else:
                     network_output = model.recurrent_inference(hidden_states, (hidden_states_c_reward, hidden_states_h_reward), last_actions)
 
-                print(search_lens)
+                after_model_inf = time.perf_counter()
+                # print(f'model inference time: {after_model_inf - before_model_inf} seconds')
+
+                # print(hidden_state_pool[0].shape)
+                # print(hidden_state_index_y_lst, hidden_state_index_x_lst)
+                # print(search_lens)
                 # results.print_nodes()
                 # print('\n', network_output.value)
                 # print(network_output.value_prefix)
                 # print(network_output.policy_logits)
-                # softmax_policy = torch.softmax(torch.from_numpy(network_output.policy_logits).float(), dim=1)
+                x = network_output.policy_logits
+                softmax_policy = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+                V = softmax_policy
+
+                kl = np.dot(V, np.log(V).T)
+                right = kl + kl.T
+                left = np.tile(np.diag(kl),(kl.shape[0],1))
+                left = left + left.T
+                L = left - right
+
+                np.set_printoptions(precision=4)
                 # print(f'Softmax policy: {softmax_policy}')
+                # print(f'pairwise KL divergence:\n {L}')
                 # # print(network_output.hidden_state.shape)
                 # # print(network_output.reward_hidden[0].shape, network_output.reward_hidden[1].shape, len(network_output.reward_hidden))
                 # print('KL divergences:')
@@ -94,13 +129,15 @@ class MCTS(object):
                 #     print(softmax_policy[i], softmax_policy[i+1])
                 #     KL = F.kl_div(softmax_policy[i].log(), softmax_policy[i+1])
                 #     print(float(KL))
-                input(f'printing roots and network_output in mcts.py (actually cnode.cpp)')
+                # input(f'printing roots and network_output in mcts.py (actually cnode.cpp)')
 
                 hidden_state_nodes = network_output.hidden_state
                 value_prefix_pool = network_output.value_prefix.reshape(-1).tolist()
                 value_pool = network_output.value.reshape(-1).tolist()
                 policy_logits_pool = network_output.policy_logits.tolist()
                 reward_hidden_nodes = network_output.reward_hidden
+
+                # print(value_prefix_pool, value_pool, policy_logits_pool)
 
                 hidden_state_pool.append(hidden_state_nodes)
                 # reset 0
@@ -121,3 +158,7 @@ class MCTS(object):
                 tree.batch_back_propagate(hidden_state_index_x, discount,
                                           value_prefix_pool, value_pool, policy_logits_pool,
                                           min_max_stats_lst, results, is_reset_lst)
+                
+        after_search = time.perf_counter()
+        print(f'search time: {after_search - before_search} seconds')
+        input('after search input')

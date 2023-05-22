@@ -18,9 +18,9 @@ cdef extern from "cminimax.h" namespace "tools":
 
     cdef cppclass CMinMaxStatsList:
         CMinMaxStatsList() except +
-        CMinMaxStatsList(int num) except +
-        int num
-        vector[CMinMaxStats] stats_lst
+        CMinMaxStatsList(int num, int searches) except +
+        int num, searches
+        vector[vector[CMinMaxStats]] stats_lsts
 
         void set_delta(float value_delta_max)
 
@@ -63,10 +63,12 @@ cdef extern from "cnode.h" namespace "tree":
 
     cdef cppclass CSearchResults:
         CSearchResults() except +
-        CSearchResults(int num) except +
-        int num
-        vector[int] hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions, search_lens
-        vector[CNode*] nodes
+        CSearchResults(int num, int searches) except +
+
+        int num, searches
+        vector[vector[int]] hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions, search_lens
+        vector[vector[CNode*]] nodes
+        vector[vector[vector[CNode*]]] search_paths
 
     cdef void cback_propagate(vector[CNode*] &search_path, CMinMaxStats &min_max_stats, int to_play, float value, float discount)
     void cbatch_back_propagate(int hidden_state_index_x, float discount, vector[float] value_prefixs, vector[float] values, vector[vector[float]] policies,

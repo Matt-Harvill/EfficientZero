@@ -24,11 +24,11 @@ namespace tools {
 
     class CMinMaxStatsList {
         public:
-            int num;
-            std::vector<CMinMaxStats> stats_lst;
+            int num, searches;
+            std::vector<std::vector<CMinMaxStats>> stats_lsts;
 
             CMinMaxStatsList();
-            CMinMaxStatsList(int num);
+            CMinMaxStatsList(int num, int searches);
             ~CMinMaxStatsList();
 
             void set_delta(float value_delta_max);

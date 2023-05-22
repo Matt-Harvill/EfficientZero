@@ -16,8 +16,8 @@ ctypedef np.npy_intp INTP
 cdef class MinMaxStatsList:
     cdef CMinMaxStatsList *cmin_max_stats_lst
 
-    def __cinit__(self, int num):
-        self.cmin_max_stats_lst = new CMinMaxStatsList(num)
+    def __cinit__(self, int num, int searches):
+        self.cmin_max_stats_lst = new CMinMaxStatsList(num, searches)
 
     def set_delta(self, float value_delta_max):
         self.cmin_max_stats_lst[0].set_delta(value_delta_max)
@@ -29,8 +29,11 @@ cdef class MinMaxStatsList:
 cdef class ResultsWrapper:
     cdef CSearchResults cresults
 
-    def __cinit__(self, int num):
-        self.cresults = CSearchResults(num)
+    def __cinit__(self, int num, int searches):
+        self.cresults = CSearchResults(num, searches)
+
+    # def print_results(self):
+    #     self.cresults.print()
 
     # def print_nodes(self):
     #     for node in self.cresults.nodes:

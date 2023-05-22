@@ -11,6 +11,7 @@
 #include <sys/timeb.h>
 #include <sys/time.h>
 #include <set>
+#include <tuple>
 
 const int DEBUG_MODE = 0;
 
@@ -27,6 +28,7 @@ namespace tree {
             CNode(float prior, int action_num, std::vector<CNode> *ptr_node_pool);
             ~CNode();
 
+            void print();
             void expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefix, const std::vector<float> &policy_logits);
             void add_exploration_noise(float exploration_fraction, const std::vector<float> &noises);
             float get_mean_q(int isRoot, float parent_q, float discount);
@@ -62,14 +64,14 @@ namespace tree {
 
     class CSearchResults{
         public:
-            int num;
-            std::vector<int> hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions, search_lens;
-            std::vector<CNode*> nodes;
-            std::vector<std::vector<CNode*>> search_paths;
-            std::set<CNode*> all_nodes;
+            int num, searches;
+            std::vector<std::vector<int>> hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions, search_lens;
+            std::vector<std::vector<CNode*>> nodes;
+            std::vector<std::vector<std::vector<CNode*>>> search_paths;
 
+            void print();
             CSearchResults();
-            CSearchResults(int num);
+            CSearchResults(int num, int searches);
             ~CSearchResults();
 
     };
@@ -79,7 +81,7 @@ namespace tree {
     void update_tree_q(CNode* root, tools::CMinMaxStats &min_max_stats, float discount);
     void cback_propagate(std::vector<CNode*> &search_path, tools::CMinMaxStats &min_max_stats, int to_play, float value, float discount);
     void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<float> &value_prefixs, const std::vector<float> &values, const std::vector<std::vector<float>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<int> is_reset_lst);
-    int cselect_child(CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q);
+    std::tuple<int, int> cselect_child(CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q);
     float cucb_score(CNode *child, tools::CMinMaxStats &min_max_stats, float parent_mean_q, int is_reset, float total_children_visit_counts, float parent_value_prefix, float pb_c_base, float pb_c_init, float discount);
     void cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results);
 }
