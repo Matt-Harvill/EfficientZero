@@ -24,7 +24,7 @@ class MCTS(object):
         """
 
         # Number of searches per simulation
-        searches = 3
+        searches = 1
 
         before_search = time.perf_counter()
 
@@ -36,7 +36,7 @@ class MCTS(object):
             device = self.config.device
             pb_c_base, pb_c_init, discount = self.config.pb_c_base, self.config.pb_c_init, self.config.discount
             # the data storage of hidden states: storing the states of all the tree nodes
-            hidden_state_pool = [hidden_state_roots]
+            hidden_state_pool = [hidden_state_roots] * searches
             # 1 x batch x 64
             # the data storage of value prefix hidden states in LSTM
             reward_hidden_c_pool = [reward_hidden_roots[0]]
@@ -80,16 +80,21 @@ class MCTS(object):
                 before_model_inf = time.perf_counter()
 
                 # obtain the states for leaf nodes
-                for ix, iy in zip(hidden_state_index_x_lst, hidden_state_index_y_lst):
-                    hidden_states.append(hidden_state_pool[ix][iy])
-                    hidden_states_c_reward.append(reward_hidden_c_pool[ix][0][iy])
-                    hidden_states_h_reward.append(reward_hidden_h_pool[ix][0][iy])
+                for i in range(searches):
+                    for ix, iy in zip(hidden_state_index_x_lst[i], hidden_state_index_y_lst[i]):
+                        hidden_states.append(hidden_state_pool[ix][iy])
+                        hidden_states_c_reward.append(reward_hidden_c_pool[ix][0][iy])
+                        hidden_states_h_reward.append(reward_hidden_h_pool[ix][0][iy])
 
                 hidden_states = torch.from_numpy(np.asarray(hidden_states)).to(device).float()
                 hidden_states_c_reward = torch.from_numpy(np.asarray(hidden_states_c_reward)).to(device).unsqueeze(0)
                 hidden_states_h_reward = torch.from_numpy(np.asarray(hidden_states_h_reward)).to(device).unsqueeze(0)
 
-                last_actions = torch.from_numpy(np.asarray(last_actions)).to(device).unsqueeze(1).long()
+                last_actions = torch.from_numpy(np.asarray(last_actions)).to(device).view(1,-1).long()
+
+                print(f'hidden_states shape: {hidden_states.shape}, last_actions shape: {last_actions.shape}')
+                print(f'hidden_states_c_reward shape: {hidden_states_c_reward.shape}, hidden_states_h_reward shape: {hidden_states_h_reward.shape}')
+                input('printing hidden_states and last_actions in mcts.py')
 
                 # evaluation for leaf nodes
                 if self.config.amp_type == 'torch_amp':
