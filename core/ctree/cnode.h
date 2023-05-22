@@ -80,7 +80,7 @@ namespace tree {
     //*********************************************************
     void update_tree_q(CNode* root, tools::CMinMaxStats &min_max_stats, float discount);
     void cback_propagate(std::vector<CNode*> &search_path, tools::CMinMaxStats &min_max_stats, int to_play, float value, float discount);
-    void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<float> &value_prefixs, const std::vector<float> &values, const std::vector<std::vector<float>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<int> is_reset_lst);
+    void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<std::vector<float>> &value_prefixs, const std::vector<std::vector<float>> &values, const std::vector<std::vector<std::vector<float>>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<std::vector<int>> is_reset_lst);
     std::tuple<int, int> cselect_child(CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q);
     float cucb_score(CNode *child, tools::CMinMaxStats &min_max_stats, float parent_mean_q, int is_reset, float total_children_visit_counts, float parent_value_prefix, float pb_c_base, float pb_c_init, float discount);
     void cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results);

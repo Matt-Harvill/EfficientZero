@@ -73,6 +73,7 @@ namespace tree{
         std::cout << "nodes:" << std::endl;
         for (const auto& row : nodes) {
             for (const auto& value : row) {
+                value->print();
                 std::cout << value << " ";
             }
             std::cout << std::endl;
@@ -83,6 +84,7 @@ namespace tree{
         for (const auto& plane : search_paths) {
             for (const auto& row : plane) {
                 for (const auto& value : row) {
+                    value->print();
                     std::cout << value << " ";
                 }
                 std::cout << std::endl;
@@ -140,8 +142,11 @@ namespace tree{
             std::cout << index << " ";
         }
         std::cout << std::endl;
+        std::cout << "children_index.size(): ";
+        std::cout << children_index.size() << std::endl;
 
         std::cout << "ptr_node_pool: " << ptr_node_pool << std::endl;
+        std::cout << "ptr_node_pool->size(): " << ptr_node_pool->size() << std::endl;
     }
 
     void CNode::expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefix, const std::vector<float> &policy_logits){
@@ -410,14 +415,14 @@ namespace tree{
         update_tree_q(root, min_max_stats, discount);
     }
 
-    void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<float> &value_prefixs, const std::vector<float> &values, const std::vector<std::vector<float>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<int> is_reset_lst){
+    void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<std::vector<float>> &value_prefixs, const std::vector<std::vector<float>> &values, const std::vector<std::vector<std::vector<float>>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<std::vector<int>> is_reset_lst){
         for(int j = 0; j < results.searches; ++j){
             for(int i = 0; i < results.num; ++i){
-                results.nodes[j][i]->expand(0, hidden_state_index_x, i, value_prefixs[i], policies[i]);
+                results.nodes[j][i]->expand(0, hidden_state_index_x, i, value_prefixs[j][i], policies[j][i]);
                 // reset
-                results.nodes[j][i]->is_reset = is_reset_lst[i];
+                results.nodes[j][i]->is_reset = is_reset_lst[j][i];
 
-                cback_propagate(results.search_paths[j][i], min_max_stats_lst->stats_lsts[j][i], 0, values[i], discount);
+                cback_propagate(results.search_paths[j][i], min_max_stats_lst->stats_lsts[j][i], 0, values[j][i], discount);
             }
         }
     }

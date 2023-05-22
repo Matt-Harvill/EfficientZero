@@ -24,7 +24,7 @@ class MCTS(object):
         """
 
         # Number of searches per simulation
-        searches = 1
+        searches = 2
 
         before_search = time.perf_counter()
 
@@ -36,11 +36,15 @@ class MCTS(object):
             device = self.config.device
             pb_c_base, pb_c_init, discount = self.config.pb_c_base, self.config.pb_c_init, self.config.discount
             # the data storage of hidden states: storing the states of all the tree nodes
-            hidden_state_pool = [hidden_state_roots] * searches
+            prev_hidden_state_shape = list(hidden_state_roots.shape)
+            hidden_state_shape = [searches] + prev_hidden_state_shape
+            hidden_state_pool = [np.vstack([hidden_state_roots] * searches).reshape(hidden_state_shape)]
+            # print(hidden_state_pool[0].shape)
+            # input()
             # 1 x batch x 64
             # the data storage of value prefix hidden states in LSTM
-            reward_hidden_c_pool = [reward_hidden_roots[0]]
-            reward_hidden_h_pool = [reward_hidden_roots[1]]
+            reward_hidden_c_pool = [np.vstack([reward_hidden_roots[0]] * searches).reshape(1, searches, num, -1)]
+            reward_hidden_h_pool = [np.vstack([reward_hidden_roots[1]] * searches).reshape(1, searches, num, -1)]
             # the index of each layer in the tree
             hidden_state_index_x = 0
             # minimax value storage
@@ -70,7 +74,7 @@ class MCTS(object):
                 
                 after_batch_traverse = time.perf_counter()
 
-                input('finished batch_traverse')
+                # input('finished batch_traverse')
 
                 # print(f'batch_traverse time: {after_batch_traverse - before_batch_traverse} seconds')
 
@@ -82,19 +86,19 @@ class MCTS(object):
                 # obtain the states for leaf nodes
                 for i in range(searches):
                     for ix, iy in zip(hidden_state_index_x_lst[i], hidden_state_index_y_lst[i]):
-                        hidden_states.append(hidden_state_pool[ix][iy])
-                        hidden_states_c_reward.append(reward_hidden_c_pool[ix][0][iy])
-                        hidden_states_h_reward.append(reward_hidden_h_pool[ix][0][iy])
+                        hidden_states.append(hidden_state_pool[ix][i][iy])
+                        hidden_states_c_reward.append(reward_hidden_c_pool[ix][0][i][iy])
+                        hidden_states_h_reward.append(reward_hidden_h_pool[ix][0][i][iy])
 
                 hidden_states = torch.from_numpy(np.asarray(hidden_states)).to(device).float()
                 hidden_states_c_reward = torch.from_numpy(np.asarray(hidden_states_c_reward)).to(device).unsqueeze(0)
                 hidden_states_h_reward = torch.from_numpy(np.asarray(hidden_states_h_reward)).to(device).unsqueeze(0)
 
-                last_actions = torch.from_numpy(np.asarray(last_actions)).to(device).view(1,-1).long()
+                last_actions = torch.from_numpy(np.asarray(last_actions)).to(device).view(-1).unsqueeze(1).long()
 
-                print(f'hidden_states shape: {hidden_states.shape}, last_actions shape: {last_actions.shape}')
-                print(f'hidden_states_c_reward shape: {hidden_states_c_reward.shape}, hidden_states_h_reward shape: {hidden_states_h_reward.shape}')
-                input('printing hidden_states and last_actions in mcts.py')
+                # print(f'hidden_states shape: {hidden_states.shape}, last_actions shape: {last_actions.shape}')
+                # print(f'hidden_states_c_reward shape: {hidden_states_c_reward.shape}, hidden_states_h_reward shape: {hidden_states_h_reward.shape}')
+                # input('printing hidden_states and last_actions in mcts.py')
 
                 # evaluation for leaf nodes
                 if self.config.amp_type == 'torch_amp':
@@ -113,17 +117,17 @@ class MCTS(object):
                 # print('\n', network_output.value)
                 # print(network_output.value_prefix)
                 # print(network_output.policy_logits)
-                x = network_output.policy_logits
-                softmax_policy = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
-                V = softmax_policy
+                # x = network_output.policy_logits
+                # softmax_policy = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+                # V = softmax_policy
 
-                kl = np.dot(V, np.log(V).T)
-                right = kl + kl.T
-                left = np.tile(np.diag(kl),(kl.shape[0],1))
-                left = left + left.T
-                L = left - right
+                # kl = np.dot(V, np.log(V).T)
+                # right = kl + kl.T
+                # left = np.tile(np.diag(kl),(kl.shape[0],1))
+                # left = left + left.T
+                # L = left - right
 
-                np.set_printoptions(precision=4)
+                # np.set_printoptions(precision=4)
                 # print(f'Softmax policy: {softmax_policy}')
                 # print(f'pairwise KL divergence:\n {L}')
                 # # print(network_output.hidden_state.shape)
@@ -134,15 +138,26 @@ class MCTS(object):
                 #     print(softmax_policy[i], softmax_policy[i+1])
                 #     KL = F.kl_div(softmax_policy[i].log(), softmax_policy[i+1])
                 #     print(float(KL))
-                # input(f'printing roots and network_output in mcts.py (actually cnode.cpp)')
+                # input(f'printing roots and network_output in mcts.py')
 
-                hidden_state_nodes = network_output.hidden_state
-                value_prefix_pool = network_output.value_prefix.reshape(-1).tolist()
-                value_pool = network_output.value.reshape(-1).tolist()
-                policy_logits_pool = network_output.policy_logits.tolist()
+                # print(network_output.value_prefix.shape, network_output.value.shape, network_output.policy_logits.shape)
+
+                hidden_state_nodes = network_output.hidden_state.reshape(hidden_state_shape)
+                value_prefix_pool = network_output.value_prefix.reshape(searches, -1).tolist()
+                value_pool = network_output.value.reshape(searches, -1).tolist()
+                policy_logits_pool = network_output.policy_logits.reshape(searches, num, -1).tolist()
                 reward_hidden_nodes = network_output.reward_hidden
 
                 # print(value_prefix_pool, value_pool, policy_logits_pool)
+                # print(len(value_prefix_pool), len(value_pool), len(policy_logits_pool))
+                # input('printing value_prefix_pool, value_pool, policy_logits_pool in mcts.py')
+                # print(search_lens)
+
+                # print(f'hidden_state_pool[0].shape: {hidden_state_pool[0].shape}')
+                # print(f'len(hidden_state_pool): {len(hidden_state_pool)}')
+                # print(reward_hidden_nodes[0].shape)
+                # print(f'hidden_state_nodes.shape: {hidden_state_nodes.shape}')
+                # input()
 
                 hidden_state_pool.append(hidden_state_nodes)
                 # reset 0
@@ -150,14 +165,24 @@ class MCTS(object):
                 # only need to predict the value prefix in a range (eg: s0 -> s5)
                 assert horizons > 0
                 reset_idx = (np.array(search_lens) % horizons == 0)
-                assert len(reset_idx) == num
-                reward_hidden_nodes[0][:, reset_idx, :] = 0
-                reward_hidden_nodes[1][:, reset_idx, :] = 0
+                assert reset_idx.shape[0] == searches and reset_idx.shape[1] == num
+
+                # print(reward_hidden_c_pool[0].shape, reward_hidden_h_pool[0].shape)
+                # print(len(reward_hidden_c_pool), len(reward_hidden_h_pool))
+
+                reward_hidden_nodes_0 = reward_hidden_nodes[0].reshape(1, searches, num, -1)
+                reward_hidden_nodes_1 = reward_hidden_nodes[1].reshape(1, searches, num, -1)
+
+                reward_hidden_nodes_0[:, reset_idx, :] = 0
+                reward_hidden_nodes_1[:, reset_idx, :] = 0
                 is_reset_lst = reset_idx.astype(np.int32).tolist()
 
-                reward_hidden_c_pool.append(reward_hidden_nodes[0])
-                reward_hidden_h_pool.append(reward_hidden_nodes[1])
+                reward_hidden_c_pool.append(reward_hidden_nodes_0)
+                reward_hidden_h_pool.append(reward_hidden_nodes_1)
                 hidden_state_index_x += 1
+
+                # print(is_reset_lst)
+                input('before batch_back_propagate in mcts.py')
 
                 # backpropagation along the search path to update the attributes
                 tree.batch_back_propagate(hidden_state_index_x, discount,

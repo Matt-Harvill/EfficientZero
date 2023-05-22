@@ -95,9 +95,9 @@ cdef class Node:
 
 def batch_back_propagate(int hidden_state_index_x, float discount, list value_prefixs, list values, list policies, MinMaxStatsList min_max_stats_lst, ResultsWrapper results, list is_reset_lst):
     cdef int i
-    cdef vector[float] cvalue_prefixs = value_prefixs
-    cdef vector[float] cvalues = values
-    cdef vector[vector[float]] cpolicies = policies
+    cdef vector[vector[float]] cvalue_prefixs = value_prefixs
+    cdef vector[vector[float]] cvalues = values
+    cdef vector[vector[vector[float]]] cpolicies = policies
 
     cbatch_back_propagate(hidden_state_index_x, discount, cvalue_prefixs, cvalues, cpolicies,
                           min_max_stats_lst.cmin_max_stats_lst, results.cresults, is_reset_lst)
