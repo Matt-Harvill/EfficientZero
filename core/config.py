@@ -376,6 +376,10 @@ class BaseConfig(object):
         return hparams
 
     def set_config(self, args):
+        self.searches = args.searches
+        self.num_simulations = args.simulations
+        self.test_episodes = args.test_episodes
+
         # reset config from the args
         self.set_game(args.env)
         self.case = args.case
@@ -421,7 +425,8 @@ class BaseConfig(object):
 
         localtime = time.asctime(time.localtime(time.time()))
         seed_tag = 'seed={}'.format(self.seed)
-        self.exp_path = os.path.join(args.result_dir, args.case, args.info, args.env, seed_tag, localtime)
+        self.exp_path = os.path.join(args.result_dir, args.case, args.info, args.env, seed_tag, \
+                            f"[S={self.searches},TE={self.test_episodes},SIM={self.num_simulations}] " + localtime)
 
         self.model_path = os.path.join(self.exp_path, 'model.p')
         self.model_dir = os.path.join(self.exp_path, 'model')
