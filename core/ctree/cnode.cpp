@@ -1,6 +1,7 @@
 #include <iostream>
 #include "cnode.h"
 #include <queue>
+#include <algorithm>
 
 namespace tree{
 
@@ -19,11 +20,12 @@ namespace tree{
                 // Create num paths for search j
                 this->search_paths[j].push_back(std::vector<CNode*>());
             }
-            this->hidden_state_index_x_lst.push_back(std::vector<int>());
-            this->hidden_state_index_y_lst.push_back(std::vector<int>());
-            this->last_actions.push_back(std::vector<int>());
-            this->search_lens.push_back(std::vector<int>());
-            this->nodes.push_back(std::vector<CNode*>());
+            this->hidden_state_index_x_lst.push_back(std::vector<int>(num, -1));
+            this->hidden_state_index_y_lst.push_back(std::vector<int>(num, -1));
+            this->hidden_state_index_z_lst.push_back(std::vector<int>(num, -1));
+            this->last_actions.push_back(std::vector<int>(num, -1));
+            this->search_lens.push_back(std::vector<int>(num, -1));
+            this->nodes.push_back(std::vector<CNode*>(num, nullptr));
         }
     }
 
@@ -45,6 +47,15 @@ namespace tree{
         // Print hidden_state_index_y_lst
         std::cout << "hidden_state_index_y_lst:" << std::endl;
         for (const auto& row : hidden_state_index_y_lst) {
+            for (const auto& value : row) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print hidden_state_index_z_lst
+        std::cout << "hidden_state_index_z_lst:" << std::endl;
+        for (const auto& row : hidden_state_index_z_lst) {
             for (const auto& value : row) {
                 std::cout << value << " ";
             }
@@ -121,6 +132,7 @@ namespace tree{
         this->ptr_node_pool = ptr_node_pool;
         this->hidden_state_index_x = -1;
         this->hidden_state_index_y = -1;
+        this->hidden_state_index_z = -1;
     }
 
     CNode::~CNode(){}
@@ -131,6 +143,7 @@ namespace tree{
         std::cout << "action_num: " << action_num << std::endl;
         std::cout << "hidden_state_index_x: " << hidden_state_index_x << std::endl;
         std::cout << "hidden_state_index_y: " << hidden_state_index_y << std::endl;
+        std::cout << "hidden_state_index_z: " << hidden_state_index_z << std::endl;
         std::cout << "best_action: " << best_action << std::endl;
         std::cout << "is_reset: " << is_reset << std::endl;
         std::cout << "value_prefix: " << value_prefix << std::endl;
@@ -149,10 +162,11 @@ namespace tree{
         std::cout << "ptr_node_pool->size(): " << ptr_node_pool->size() << std::endl;
     }
 
-    void CNode::expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefix, const std::vector<float> &policy_logits){
+    void CNode::expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, int hidden_state_index_z, float value_prefix, const std::vector<float> &policy_logits){
         this->to_play = to_play;
         this->hidden_state_index_x = hidden_state_index_x;
         this->hidden_state_index_y = hidden_state_index_y;
+        this->hidden_state_index_z = hidden_state_index_z;
         this->value_prefix = value_prefix;
 
         int action_num = this->action_num;
@@ -271,6 +285,17 @@ namespace tree{
         return distribution;
     }
 
+    std::vector<float> CNode::get_children_values(){
+        std::vector<float> values;
+        if(this->expanded()){
+            for(int a = 0; a < this->action_num; ++a){
+                CNode* child = this->get_child(a);
+                values.push_back(child->value());
+            }
+        }
+        return values;
+    }
+
     CNode* CNode::get_child(int action){
         int index = this->children_index[action];
         return &((*(this->ptr_node_pool))[index]);
@@ -304,7 +329,7 @@ namespace tree{
 
     void CRoots::prepare(float root_exploration_fraction, const std::vector<std::vector<float>> &noises, const std::vector<float> &value_prefixs, const std::vector<std::vector<float>> &policies){
         for(int i = 0; i < this->root_num; ++i){
-            this->roots[i].expand(0, 0, i, value_prefixs[i], policies[i]);
+            this->roots[i].expand(0, 0, i, 0, value_prefixs[i], policies[i]);
             this->roots[i].add_exploration_noise(root_exploration_fraction, noises[i]);
 
             this->roots[i].visit_count += 1;
@@ -313,7 +338,7 @@ namespace tree{
 
     void CRoots::prepare_no_noise(const std::vector<float> &value_prefixs, const std::vector<std::vector<float>> &policies){
         for(int i = 0; i < this->root_num; ++i){
-            this->roots[i].expand(0, 0, i, value_prefixs[i], policies[i]);
+            this->roots[i].expand(0, 0, i, 0, value_prefixs[i], policies[i]);
 
             this->roots[i].visit_count += 1;
         }
@@ -342,6 +367,16 @@ namespace tree{
             distributions.push_back(this->roots[i].get_children_distribution());
         }
         return distributions;
+    }
+
+    std::vector<std::vector<float>> CRoots::get_children_values(){
+        std::vector<std::vector<float>> values;
+        values.reserve(this->root_num);
+
+        for(int i = 0; i < this->root_num; ++i){
+            values.push_back(this->roots[i].get_children_values());
+        }
+        return values;
     }
 
     std::vector<float> CRoots::get_values(){
@@ -416,9 +451,9 @@ namespace tree{
     }
 
     void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<std::vector<float>> &value_prefixs, const std::vector<std::vector<float>> &values, const std::vector<std::vector<std::vector<float>>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<std::vector<int>> is_reset_lst){
-        for(int j = 0; j < results.searches; ++j){
-            for(int i = 0; i < results.num; ++i){
-                results.nodes[j][i]->expand(0, hidden_state_index_x, i, value_prefixs[j][i], policies[j][i]);
+        for(int i = 0; i < results.num; ++i){
+            for(int j = 0; j < results.num_searched[i]; ++j){
+                results.nodes[j][i]->expand(0, hidden_state_index_x, i, j, value_prefixs[j][i], policies[j][i]);
                 // reset
                 results.nodes[j][i]->is_reset = is_reset_lst[j][i];
 
@@ -532,8 +567,6 @@ namespace tree{
                 nodes.pop();
                 CNode *node = std::get<0>(node_tuple);
                 int index = std::get<1>(node_tuple);
-                
-                // std::cout << "index: " << index << std::endl;
 
                 // Calculate mean_q for selecting best actions
                 float mean_q = node->get_mean_q(is_root, parent_qs[index], discount);
@@ -544,9 +577,6 @@ namespace tree{
                 std::tuple<int, int> actions = cselect_child(node, min_max_stats_lst->stats_lsts[index][i], pb_c_base, pb_c_init, discount, mean_q);
                 int best_action = std::get<0>(actions);
                 int second_best_action = std::get<1>(actions);
-
-                // std::cout << "best_action: " << best_action << std::endl;
-                // std::cout << "second_best_action: " << second_best_action << std::endl;
                 
                 // Set best_action
                 node->best_action = best_action;
@@ -567,13 +597,10 @@ namespace tree{
             }
 
             int num_searched = j + 1;
-
-            // std::cout << "num_searched: " << num_searched << std::endl;
+            results.num_searched.push_back(num_searched);
 
             for(int k = 0; k < num_searched; ++k){
                 CNode *node = results.search_paths[k][i].back();
-
-                // std::cout << "node->expanded(): " << node->expanded() << std::endl;
 
                 while(node->expanded()){
                     float mean_q = node->get_mean_q(is_root, parent_qs[k], discount);
@@ -590,21 +617,15 @@ namespace tree{
                 }
 
                 int search_len = results.search_paths[k][i].size();
-
-                // std::cout << "search_len: " << search_len << std::endl;
-                // node->print();
-
                 CNode* parent = results.search_paths[k][i][search_len - 2];
 
-                // std::cout << "parent: " << std::endl;
-                // parent->print();
+                results.hidden_state_index_x_lst[k][i] = (parent->hidden_state_index_x);
+                results.hidden_state_index_y_lst[k][i] = (parent->hidden_state_index_y);
+                results.hidden_state_index_z_lst[k][i] = (parent->hidden_state_index_z);
 
-                results.hidden_state_index_x_lst[k].push_back(parent->hidden_state_index_x);
-                results.hidden_state_index_y_lst[k].push_back(parent->hidden_state_index_y);
-
-                results.last_actions[k].push_back(parent->best_action);
-                results.search_lens[k].push_back(search_len);
-                results.nodes[k].push_back(node);
+                results.last_actions[k][i] = (parent->best_action);
+                results.search_lens[k][i] = (search_len);
+                results.nodes[k][i] = (node);
             }
         }
         // results.print();

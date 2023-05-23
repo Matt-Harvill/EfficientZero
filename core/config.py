@@ -20,6 +20,7 @@ class DiscreteSupport(object):
 class BaseConfig(object):
 
     def __init__(self,
+                 searches: int,
                  training_steps: int,
                  last_steps: int,
                  test_interval: int,
@@ -76,6 +77,8 @@ class BaseConfig(object):
         """Base Config for EfficietnZero
         Parameters
         ----------
+        searches: int:
+            how many parallel searches per simulation
         training_steps: int
             training steps while collecting data
         last_steps: int
@@ -191,6 +194,9 @@ class BaseConfig(object):
         reward_support: DiscreteSupport
             support of reward to represent the reward scalars
         """
+        # Searches
+        self.searches = searches
+
         # Self-Play
         self.action_space_size = None
         self.num_actors = num_actors

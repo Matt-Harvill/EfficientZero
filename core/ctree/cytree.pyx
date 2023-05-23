@@ -65,6 +65,9 @@ cdef class Roots:
     def get_distributions(self):
         return self.roots[0].get_distributions()
 
+    def get_children_values(self):
+        return self.roots[0].get_children_values()
+
     def get_values(self):
         return self.roots[0].get_values()
 
@@ -89,9 +92,9 @@ cdef class Node:
         # self.cnode = CNode(prior, action_num)
         pass
 
-    def expand(self, int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefix, list policy_logits):
+    def expand(self, int to_play, int hidden_state_index_x, int hidden_state_index_y, int hidden_state_index_z, float value_prefix, list policy_logits):
         cdef vector[float] cpolicy = policy_logits
-        self.cnode.expand(to_play, hidden_state_index_x, hidden_state_index_y, value_prefix, cpolicy)
+        self.cnode.expand(to_play, hidden_state_index_x, hidden_state_index_y, hidden_state_index_z, value_prefix, cpolicy)
 
 def batch_back_propagate(int hidden_state_index_x, float discount, list value_prefixs, list values, list policies, MinMaxStatsList min_max_stats_lst, ResultsWrapper results, list is_reset_lst):
     cdef int i
@@ -107,4 +110,5 @@ def batch_traverse(Roots roots, int pb_c_base, float pb_c_init, float discount, 
 
     cbatch_traverse(roots.roots, pb_c_base, pb_c_init, discount, min_max_stats_lst.cmin_max_stats_lst, results.cresults)
 
-    return results.cresults.hidden_state_index_x_lst, results.cresults.hidden_state_index_y_lst, results.cresults.last_actions
+    return results.cresults.hidden_state_index_x_lst, results.cresults.hidden_state_index_y_lst, \
+        results.cresults.hidden_state_index_z_lst, results.cresults.last_actions

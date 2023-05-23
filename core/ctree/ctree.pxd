@@ -32,12 +32,12 @@ cdef extern from "cnode.h" namespace "tree":
     cdef cppclass CNode:
         CNode() except +
         CNode(float prior, int action_num, vector[CNode]* ptr_node_pool) except +
-        int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, best_action
+        int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, hidden_state_index_z, best_action
         float value_prefixs, prior, value_sum
         vector[int] children_index;
         vector[CNode]* ptr_node_pool;
 
-        void expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefixs, vector[float] policy_logits)
+        void expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, int hidden_state_index_z, float value_prefixs, vector[float] policy_logits)
         void add_exploration_noise(float exploration_fraction, vector[float] noises)
         float get_mean_q(int isRoot, float parent_q, float discount)
 
@@ -45,6 +45,7 @@ cdef extern from "cnode.h" namespace "tree":
         float value()
         vector[int] get_trajectory()
         vector[int] get_children_distribution()
+        vector[float] get_children_value()
         CNode* get_child(int action)
 
     cdef cppclass CRoots:
@@ -59,6 +60,7 @@ cdef extern from "cnode.h" namespace "tree":
         void clear()
         vector[vector[int]] get_trajectories()
         vector[vector[int]] get_distributions()
+        vector[vector[float]] get_children_values()
         vector[float] get_values()
 
     cdef cppclass CSearchResults:
@@ -66,7 +68,8 @@ cdef extern from "cnode.h" namespace "tree":
         CSearchResults(int num, int searches) except +
 
         int num, searches
-        vector[vector[int]] hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions, search_lens
+        vector[int] num_searched
+        vector[vector[int]] hidden_state_index_x_lst, hidden_state_index_y_lst, hidden_state_index_z_lst, last_actions, search_lens
         vector[vector[CNode*]] nodes
         vector[vector[vector[CNode*]]] search_paths
 

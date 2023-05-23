@@ -19,7 +19,7 @@ namespace tree {
 
     class CNode {
         public:
-            int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, best_action, is_reset;
+            int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, hidden_state_index_z, best_action, is_reset;
             float value_prefix, prior, value_sum;
             std::vector<int> children_index;
             std::vector<CNode>* ptr_node_pool;
@@ -29,7 +29,7 @@ namespace tree {
             ~CNode();
 
             void print();
-            void expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefix, const std::vector<float> &policy_logits);
+            void expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, int hidden_state_index_z, float value_prefix, const std::vector<float> &policy_logits);
             void add_exploration_noise(float exploration_fraction, const std::vector<float> &noises);
             float get_mean_q(int isRoot, float parent_q, float discount);
             void print_out();
@@ -40,6 +40,7 @@ namespace tree {
 
             std::vector<int> get_trajectory();
             std::vector<int> get_children_distribution();
+            std::vector<float> get_children_values();
             CNode* get_child(int action);
     };
 
@@ -58,6 +59,7 @@ namespace tree {
             void clear();
             std::vector<std::vector<int>> get_trajectories();
             std::vector<std::vector<int>> get_distributions();
+            std::vector<std::vector<float>> get_children_values();
             std::vector<float> get_values();
 
     };
@@ -65,7 +67,8 @@ namespace tree {
     class CSearchResults{
         public:
             int num, searches;
-            std::vector<std::vector<int>> hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions, search_lens;
+            std::vector<int> num_searched;
+            std::vector<std::vector<int>> hidden_state_index_x_lst, hidden_state_index_y_lst, hidden_state_index_z_lst, last_actions, search_lens;
             std::vector<std::vector<CNode*>> nodes;
             std::vector<std::vector<std::vector<CNode*>>> search_paths;
 
