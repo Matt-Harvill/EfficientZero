@@ -10,7 +10,7 @@ from .model import EfficientZeroNet
 class AtariConfig(BaseConfig):
     def __init__(self):
         super(AtariConfig, self).__init__(
-            searches=1, # parallel searches
+            searches=5, # parallel searches
             training_steps=100000,
             last_steps=20000,
             test_interval=10000,

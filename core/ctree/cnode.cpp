@@ -561,12 +561,16 @@ namespace tree{
             nodes.push(std::make_tuple(node, 0));
 
             // Get the nodes to be searched
-            while(nodes.size() < searches && (std::get<0>(nodes.front())->expanded())){
+            while(j < searches - 1 && nodes.size() > 0){
                 // Pop off the queue
                 std::tuple<CNode*, int> node_tuple = nodes.front();
                 nodes.pop();
                 CNode *node = std::get<0>(node_tuple);
                 int index = std::get<1>(node_tuple);
+
+                if(!(node->expanded())){
+                    continue;
+                }
 
                 // Calculate mean_q for selecting best actions
                 float mean_q = node->get_mean_q(is_root, parent_qs[index], discount);
