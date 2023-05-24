@@ -129,6 +129,7 @@ if __name__ == '__main__':
             std_score = test_score.std()
             logging.getLogger('test').info('Test Mean Score: {} (max: {}, min: {})'.format(mean_score, test_score.max(), test_score.min()))
             logging.getLogger('test').info('Test Std Score: {}'.format(std_score))
+            logging.getLogger('test').info('Test Scores: {}'.format(test_score.astype(int).tolist()))
             if args.save_video:
                 logging.getLogger('test').info('Saving video in path: {}'.format(test_path))
         else:

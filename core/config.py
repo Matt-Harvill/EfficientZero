@@ -425,9 +425,9 @@ class BaseConfig(object):
 
         localtime = time.asctime(time.localtime(time.time()))
         seed_tag = 'seed={}'.format(self.seed)
-        self.exp_path = os.path.join(args.result_dir, args.case, args.info, args.env, seed_tag, \
-            f"max_moves={self.max_episode_steps}", f"test_eps={self.test_episodes}" , f"sims={self.num_simulations}", \
-            f"searches={self.searches}", localtime)
+        self.exp_path = os.path.join(args.result_dir, args.case, args.info, args.env, \
+            f"max_moves=27000", f"test_eps={self.test_episodes}" , f"sims={self.num_simulations}", \
+            f"searches={self.searches}", seed_tag, localtime)
 
         self.model_path = os.path.join(self.exp_path, 'model.p')
         self.model_dir = os.path.join(self.exp_path, 'model')

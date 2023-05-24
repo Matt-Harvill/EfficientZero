@@ -151,6 +151,8 @@ def test(config, model, counter, test_episodes, device, render, save_video=False
                 ep_ori_rewards[i] += ori_reward
                 ep_clip_rewards[i] += clip_reward
 
+                # input(f'ep_ori_rewards: {ep_ori_rewards}, type of ep_ori_rewards: {type(ep_ori_rewards)}')
+
             step += 1
             if use_pb:
                 pb.set_description('{} In step {}, scores: {}(max: {}, min: {}) currently.'
