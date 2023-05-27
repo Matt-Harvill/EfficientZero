@@ -162,8 +162,7 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
                     ### Get representations of the masked and unmasked target observations
                     _, _, _, masked_hidden_state, _ = model.initial_inference(masked_obs_batch)
                     ori_hidden_state_shape = masked_hidden_state.shape # (B, 64, 6, 6))
-                    # TODO Need to define new model initial_inference function for the target observations
-                    _, _, _, unmasked_hidden_target_state, _ = model.initial_inference(unmasked_obs_target_batch)
+                    unmasked_hidden_target_state = model.momentum_inference(unmasked_obs_target_batch)
 
                     ### Decode masked representations
                     # Embed actions into same dimension as masked_hidden_state
@@ -185,9 +184,8 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
                     decoded_masked_hidden_state = decoded_masked_hidden_state.view(*ori_hidden_state_shape)
                     
                     ### Project masked representations and unmasked target observations
-                    masked_proj = model.project(decoded_masked_hidden_state, with_grad=True)
-                    # TODO Need to define new projection function for the target observations
-                    unmasked_target_proj = model.project(unmasked_hidden_target_state, with_grad=False)
+                    masked_proj = model.mlr_project(decoded_masked_hidden_state, with_grad=True)
+                    unmasked_target_proj = model.mlr_project(unmasked_hidden_target_state, with_grad=False)
 
                     ### Calculate MLR loss
                     mlr_loss += consist_loss_func(masked_proj, unmasked_target_proj) * mask_batch[:, step_i]
@@ -332,6 +330,9 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
     else:
         optimizer.step()
     # ----------------------------------------------------------------------------------
+    # Momentum update
+    model.momentum_update()
+
     # update priority
     new_priority = value_priority
     replay_buffer.update_priorities.remote(indices, new_priority, make_time)

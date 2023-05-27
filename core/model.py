@@ -72,11 +72,18 @@ class BaseNet(nn.Module):
     def prediction(self, state):
         raise NotImplementedError
 
+    def momentum_representation(self, obs_history):
+        raise NotImplementedError
+
     def representation(self, obs_history):
         raise NotImplementedError
 
     def dynamics(self, state, reward_hidden, action):
         raise NotImplementedError
+    
+    def momentum_inference(self, obs):
+        state = self.momentum_representation(obs)
+        return state
 
     def initial_inference(self, obs) -> NetworkOutput:
         num = obs.size(0)

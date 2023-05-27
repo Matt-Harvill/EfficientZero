@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from timm.models.layers import drop_path 
 
 from core.model import BaseNet, renormalize
+import copy
 
 
 def mlp(
@@ -680,6 +681,26 @@ class EfficientZeroNet(BaseNet):
             init_zero=self.init_zero,
         )
 
+        # projection
+        in_dim = num_channels * math.ceil(observation_shape[1] / 16) * math.ceil(observation_shape[2] / 16)
+        self.porjection_in_dim = in_dim
+        self.projection = nn.Sequential(
+            nn.Linear(self.porjection_in_dim, self.proj_hid),
+            nn.BatchNorm1d(self.proj_hid),
+            nn.ReLU(),
+            nn.Linear(self.proj_hid, self.proj_hid),
+            nn.BatchNorm1d(self.proj_hid),
+            nn.ReLU(),
+            nn.Linear(self.proj_hid, self.proj_out),
+            nn.BatchNorm1d(self.proj_out)
+        )
+        self.projection_head = nn.Sequential(
+            nn.Linear(self.proj_out, self.pred_hid),
+            nn.BatchNorm1d(self.pred_hid),
+            nn.ReLU(),
+            nn.Linear(self.pred_hid, self.pred_out),
+        )
+
         # Add a transformer
         num_attn_layers = 2
         encoder_feature_dim = 64*6*6
@@ -704,30 +725,37 @@ class EfficientZeroNet(BaseNet):
             input_size=input_size, image_size=img_size, clip_size=obs_depth, \
                 block_size=block_size, mask_ratio=mask_ratio)  # 1 for mask, num_grid=input_size
         
+        # Add MLR-specific projection
+        self.mlr_projection = copy.deepcopy(self.projection)
+        self.mlr_target_projection = copy.deepcopy(self.projection)
+        self.mlr_projection_head = copy.deepcopy(self.projection_head)
 
-        # projection
-        in_dim = num_channels * math.ceil(observation_shape[1] / 16) * math.ceil(observation_shape[2] / 16)
-        self.porjection_in_dim = in_dim
-        self.projection = nn.Sequential(
-            nn.Linear(self.porjection_in_dim, self.proj_hid),
-            nn.BatchNorm1d(self.proj_hid),
-            nn.ReLU(),
-            nn.Linear(self.proj_hid, self.proj_hid),
-            nn.BatchNorm1d(self.proj_hid),
-            nn.ReLU(),
-            nn.Linear(self.proj_hid, self.proj_out),
-            nn.BatchNorm1d(self.proj_out)
-        )
-        self.projection_head = nn.Sequential(
-            nn.Linear(self.proj_out, self.pred_hid),
-            nn.BatchNorm1d(self.pred_hid),
-            nn.ReLU(),
-            nn.Linear(self.pred_hid, self.pred_out),
-        )
+        # Add EMA representation network for MLR
+        self.momentum = 0.95
+        self.momentum_representation_network = copy.deepcopy(self.representation_network)
+        for param in (list(self.momentum_representation_network.parameters()) + 
+                        list(self.mlr_target_projection.parameters())):
+            param.requires_grad = False
+
+    def momentum_update(self):
+        # Update momentum representation network
+        for param, param_momentum in zip(self.representation_network.parameters(), self.momentum_representation_network.parameters()):
+            param_momentum.data = self.momentum * param_momentum.data + (1 - self.momentum) * param.data
+        # Update momentum projection network
+        for param, param_momentum in zip(self.mlr_projection.parameters(), self.mlr_target_projection.parameters()):
+            param_momentum.data = self.momentum * param_momentum.data + (1 - self.momentum) * param.data
 
     def prediction(self, encoded_state):
         policy, value = self.prediction_network(encoded_state)
         return policy, value
+    
+    def momentum_representation(self, observation):
+        encoded_state = self.momentum_representation_network(observation)
+        if not self.state_norm:
+            return encoded_state
+        else:
+            encoded_state_normalized = renormalize(encoded_state)
+            return encoded_state_normalized
 
     def representation(self, observation):
         encoded_state = self.representation_network(observation)
@@ -769,6 +797,19 @@ class EfficientZeroNet(BaseNet):
         reward_w_dist, reward_mean = self.dynamics_network.get_reward_mean()
 
         return reward_w_dist, representation_mean, dynamic_mean, reward_mean
+
+    def mlr_project(self, hidden_state, with_grad=True):
+        # only the branch of proj + pred can share the gradients
+        hidden_state = hidden_state.view(-1, self.porjection_in_dim)
+
+        # with grad, use proj_head
+        if with_grad:
+            proj = self.mlr_projection(hidden_state)
+            proj = self.mlr_projection_head(proj)
+            return proj
+        else:
+            proj = self.mlr_target_projection(hidden_state)
+            return proj.detach()
 
     def project(self, hidden_state, with_grad=True):
         # only the branch of proj + pred can share the gradients
