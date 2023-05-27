@@ -54,6 +54,7 @@ class AtariConfig(BaseConfig):
             value_loss_coeff=0.25,
             policy_loss_coeff=1,
             consistency_coeff=2,
+            mlr_coeff=1,
             # reward sum
             lstm_hidden_size=512,
             lstm_horizon_len=5,

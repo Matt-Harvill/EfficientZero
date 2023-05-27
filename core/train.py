@@ -134,6 +134,7 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
     policy_loss = -(torch.log_softmax(policy_logits, dim=1) * target_policy[:, 0]).sum(1)
     value_prefix_loss = torch.zeros(batch_size, device=config.device)
     consistency_loss = torch.zeros(batch_size, device=config.device)
+    mlr_loss = torch.zeros(batch_size, device=config.device)
 
     target_value_prefix_cpu = target_value_prefix.detach().cpu()
     gradient_scale = 1 / config.num_unroll_steps
@@ -142,6 +143,56 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
         # use torch amp
         with autocast():
             for step_i in range(config.num_unroll_steps):
+                ############# MLR #############
+                # Create masked observations
+                masked_obs_batch = obs_batch_ori[:, step_i * config.image_channel: (step_i + config.stacked_observations) * config.image_channel, :, :]
+                # Create target observations
+                unmasked_obs_target_batch = masked_obs_batch.clone()
+                # do augmentations
+                if config.use_augmentation:
+                    masked_obs_batch = config.transform(masked_obs_batch)
+                    unmasked_obs_target_batch = config.transform(unmasked_obs_target_batch)
+
+                # Mask the masked_obs_batch
+                mask = model.masker().to(config.device)
+                masked_obs_batch = mask * masked_obs_batch
+
+                # MLR loss
+                if config.mlr_coeff > 0:
+                    ### Get representations of the masked and unmasked target observations
+                    _, _, _, masked_hidden_state, _ = model.initial_inference(masked_obs_batch)
+                    ori_hidden_state_shape = masked_hidden_state.shape # (B, 64, 6, 6))
+                    # TODO Need to define new model initial_inference function for the target observations
+                    _, _, _, unmasked_hidden_target_state, _ = model.initial_inference(unmasked_obs_target_batch)
+
+                    ### Decode masked representations
+                    # Embed actions into same dimension as masked_hidden_state
+                    action = action_batch[:, step_i]
+                    action_onehot = F.one_hot(action, num_classes=config.action_space_size).float()
+                    action_embedding = model.action_embedding(action_onehot).to(config.device)
+                    ## No need for positional embeddings since representation network condenses 4 frames into 1
+                    # Add positional embeddings to masked_hidden_state and action embeddings (a_t and s_t get same positional embedding)
+                    # position_embedding = model.position().to(config.device).expand(batch_size, config.image_channel * config.stacked_observations, -1)
+                    # masked_hidden_state = masked_hidden_state.view(batch_size, config.image_channel * config.stacked_observations, -1)
+                    # masked_hidden_state = masked_hidden_state + position_embedding
+
+                    # Concatenate masked_hidden_state and action embeddings
+                    masked_obs_concat_action = torch.cat((masked_hidden_state.view(batch_size, 1, -1), action_embedding.view(batch_size, 1, -1)), dim=1)
+                    # Use transformer-encoder to decode masked observations
+                    for i in range(len(model.transformer)):
+                        masked_obs_concat_action = model.transformer[i](masked_obs_concat_action)    # (B, 2, 64*6*6)
+                    decoded_masked_hidden_state = masked_obs_concat_action[:, 0, :]    # (B, 1, 64*6*6)
+                    decoded_masked_hidden_state = decoded_masked_hidden_state.view(*ori_hidden_state_shape)
+                    
+                    ### Project masked representations and unmasked target observations
+                    masked_proj = model.project(decoded_masked_hidden_state, with_grad=True)
+                    # TODO Need to define new projection function for the target observations
+                    unmasked_target_proj = model.project(unmasked_hidden_target_state, with_grad=False)
+
+                    ### Calculate MLR loss
+                    mlr_loss += consist_loss_func(masked_proj, unmasked_target_proj) * mask_batch[:, step_i]
+                ###############################
+
                 # unroll with the dynamics function
                 value, value_prefix, policy_logits, hidden_state, reward_hidden = model.recurrent_inference(hidden_state, reward_hidden, action_batch[:, step_i])
 
@@ -253,7 +304,8 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
     # ----------------------------------------------------------------------------------
     # weighted loss with masks (some invalid states which are out of trajectory.)
     loss = (config.consistency_coeff * consistency_loss + config.policy_loss_coeff * policy_loss +
-            config.value_loss_coeff * value_loss + config.reward_loss_coeff * value_prefix_loss)
+            config.value_loss_coeff * value_loss + config.reward_loss_coeff * value_prefix_loss + 
+            config.mlr_coeff * mlr_loss)
     weighted_loss = (weights * loss).mean()
 
     # backward
@@ -286,7 +338,8 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
 
     # packing data for logging
     loss_data = (total_loss.item(), weighted_loss.item(), loss.mean().item(), 0, policy_loss.mean().item(),
-                 value_prefix_loss.mean().item(), value_loss.mean().item(), consistency_loss.mean())
+                 value_prefix_loss.mean().item(), value_loss.mean().item(), consistency_loss.mean(),
+                 mlr_loss.mean())
     if vis_result:
         reward_w_dist, representation_mean, dynamic_mean, reward_mean = model.get_params_mean()
         other_dist['reward_weights_dist'] = reward_w_dist

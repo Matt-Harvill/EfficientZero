@@ -67,6 +67,7 @@ class BaseConfig(object):
                  value_loss_coeff: float = 1,
                  policy_loss_coeff: float = 1,
                  consistency_coeff: float = 1,
+                 mlr_coeff: float = 1,
                  proj_hid: int = 256,
                  proj_out: int = 256,
                  pred_hid: int = 64,
@@ -178,6 +179,8 @@ class BaseConfig(object):
             coefficient of policy loss
         consistency_coeff: float
             coefficient of consistency loss
+        mlr_coeff: float
+            coefficient of mlr loss
         proj_hid: int
             dim of projection hidden layer
         proj_out: int
@@ -251,6 +254,7 @@ class BaseConfig(object):
         self.value_loss_coeff = value_loss_coeff
         self.policy_loss_coeff = policy_loss_coeff
         self.consistency_coeff = consistency_coeff
+        self.mlr_coeff = mlr_coeff
         self.device = 'cuda'
         self.exp_path = None  # experiment path
         self.debug = False
