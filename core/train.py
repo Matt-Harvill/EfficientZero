@@ -82,6 +82,17 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
     target_policy = torch.from_numpy(target_policy).to(config.device).float()
     weights = torch.from_numpy(weights_lst).to(config.device).float()
 
+    # print(f"action_batch.shape: {action_batch.shape}")
+    # print(f"mask_batch.shape: {mask_batch.shape}")
+    # print(f"target_value_prefix.shape: {target_value_prefix.shape}")
+    # print(f"target_value.shape: {target_value.shape}")
+    # print(f"target_policy.shape: {target_policy.shape}")
+    # print(f"weights.shape: {weights.shape}")
+    # print(f"obs_batch_ori.shape: {obs_batch_ori.shape}")
+    # print(f"obs_batch.shape: {obs_batch.shape}")
+    # print(f"obs_target_batch.shape: {obs_target_batch.shape}")
+    # input()
+
     batch_size = obs_batch.size(0)
     assert batch_size == config.batch_size == target_value_prefix.size(0)
     metric_loss = torch.nn.L1Loss()
@@ -142,11 +153,11 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
     if config.amp_type == 'torch_amp':
         # use torch amp
         with autocast():
-            for step_i in range(config.num_unroll_steps):
-                ############# MLR #############
-                # Create masked observations
-                masked_obs_batch = obs_batch_ori[:, step_i * config.image_channel: (step_i + config.stacked_observations) * config.image_channel, :, :]
-                # Create target observations
+
+            ############# MLR #############
+            if config.mlr_coeff > 0:
+                # Create masked observations and target observations
+                masked_obs_batch = obs_batch_ori[:, :-config.image_channel].clone()
                 unmasked_obs_target_batch = masked_obs_batch.clone()
                 # do augmentations
                 if config.use_augmentation:
@@ -157,40 +168,45 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
                 mask = model.masker().to(config.device)
                 masked_obs_batch = mask * masked_obs_batch
 
-                # MLR loss
-                if config.mlr_coeff > 0:
-                    ### Get representations of the masked and unmasked target observations
-                    _, _, _, masked_hidden_state, _ = model.initial_inference(masked_obs_batch)
-                    ori_hidden_state_shape = masked_hidden_state.shape # (B, 64, 6, 6))
-                    unmasked_hidden_target_state = model.momentum_inference(unmasked_obs_target_batch)
+                ### Get representations of the masked and unmasked target observations
+                T = config.num_unroll_steps
+                masked_hidden_states = torch.zeros((batch_size, T, 64, 6, 6), device=config.device)
+                unmasked_hidden_target_states = torch.zeros_like(masked_hidden_states, device=config.device)
+                for step_i in range(T):
+                    _, _, _, masked_hidden_state, _ = model.initial_inference(masked_obs_batch[:, step_i*config.image_channel : (step_i+config.stacked_observations)*config.image_channel, :, :])
+                    unmasked_hidden_target_state = model.momentum_inference(unmasked_obs_target_batch[:, step_i*config.image_channel : (step_i+config.stacked_observations)*config.image_channel, :, :])
+                    masked_hidden_states[:, step_i, :, :, :] = masked_hidden_state
+                    unmasked_hidden_target_states[:, step_i, :, :, :] = unmasked_hidden_target_state
 
-                    ### Decode masked representations
-                    # Embed actions into same dimension as masked_hidden_state
-                    action = action_batch[:, step_i]
-                    action_onehot = F.one_hot(action, num_classes=config.action_space_size).float()
-                    action_embedding = model.action_embedding(action_onehot).to(config.device)
-                    ## No need for positional embeddings since representation network condenses 4 frames into 1
-                    # Add positional embeddings to masked_hidden_state and action embeddings (a_t and s_t get same positional embedding)
-                    # position_embedding = model.position().to(config.device).expand(batch_size, config.image_channel * config.stacked_observations, -1)
-                    # masked_hidden_state = masked_hidden_state.view(batch_size, config.image_channel * config.stacked_observations, -1)
-                    # masked_hidden_state = masked_hidden_state + position_embedding
+                ### Decode masked representations
+                # Embed actions into same dimension as masked_hidden_state
+                actions = action_batch
+                actions_onehot = F.one_hot(actions, num_classes=config.action_space_size).float()
+                action_embeddings = model.action_embedding(actions_onehot).to(config.device)
 
-                    # Concatenate masked_hidden_state and action embeddings
-                    masked_obs_concat_action = torch.cat((masked_hidden_state.view(batch_size, 1, -1), action_embedding.view(batch_size, 1, -1)), dim=1)
-                    # Use transformer-encoder to decode masked observations
-                    for i in range(len(model.transformer)):
-                        masked_obs_concat_action = model.transformer[i](masked_obs_concat_action)    # (B, 2, 64*6*6)
-                    decoded_masked_hidden_state = masked_obs_concat_action[:, 0, :]    # (B, 1, 64*6*6)
-                    decoded_masked_hidden_state = decoded_masked_hidden_state.view(*ori_hidden_state_shape)
-                    
-                    ### Project masked representations and unmasked target observations
-                    masked_proj = model.mlr_project(decoded_masked_hidden_state, with_grad=True)
-                    unmasked_target_proj = model.mlr_project(unmasked_hidden_target_state, with_grad=False)
+                # Add positional embeddings to masked_hidden_state and action embeddings (a_t and s_t get same positional embedding)
+                position_embedding = model.position(T).to(config.device).expand(batch_size, T, -1) # B, T=config.num_roll_steps+1, 64*6*6
+                masked_hidden_states = masked_hidden_states.view(batch_size, T, -1) + position_embedding
+                action_embeddings = action_embeddings.view(batch_size, T, -1) + position_embedding
+
+                # Concatenate masked_hidden_state and action embeddings
+                masked_obs_concat_actions = torch.cat((masked_hidden_states, action_embeddings), dim=1)
+                # Use transformer-encoder to decode masked observations
+                for i in range(len(model.transformer)):
+                    masked_obs_concat_actions = model.transformer[i](masked_obs_concat_actions)    # (B, 2T, 64*6*6)
+                decoded_masked_hidden_states = masked_obs_concat_actions[:, :T, :]    # (B, T, 64*6*6)
+                decoded_masked_hidden_states = decoded_masked_hidden_states.view(*masked_hidden_states.shape)
+                
+                ### Project masked representations and unmasked target observations
+                for step_i in range(T):
+                    masked_proj = model.mlr_project(decoded_masked_hidden_states[:, step_i], with_grad=True)
+                    unmasked_target_proj = model.mlr_project(unmasked_hidden_target_states[:, step_i], with_grad=False)
 
                     ### Calculate MLR loss
                     mlr_loss += consist_loss_func(masked_proj, unmasked_target_proj) * mask_batch[:, step_i]
-                ###############################
+            ###############################
 
+            for step_i in range(config.num_unroll_steps):
                 # unroll with the dynamics function
                 value, value_prefix, policy_logits, hidden_state, reward_hidden = model.recurrent_inference(hidden_state, reward_hidden, action_batch[:, step_i])
 

@@ -120,8 +120,8 @@ class PositionalEmbedding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
-    def forward(self):
-        return self.pe
+    def forward(self, length):
+        return self.pe[:, :length]
 
 # MLR's MLP
 class Mlp(nn.Module):
@@ -712,14 +712,14 @@ class EfficientZeroNet(BaseNet):
                     norm_layer=nn.LayerNorm, attn_head_dim=None) 
             for _ in range(num_attn_layers)])
         self.action_embedding = nn.Linear(self.action_space_size, encoder_feature_dim)
-        # self.position = PositionalEmbedding(encoder_feature_dim)
+        self.position = PositionalEmbedding(encoder_feature_dim)
 
         # Add a masker
         img_size = 96
         mask_ratio = 0.5
         block_size = 6 # How deep for each mask (2 frames since 3 channels per frame)
         patch_size = 12 # In pixels
-        obs_depth = 12 # How deep are the observation blocks passed in
+        obs_depth = 24 # How deep are the observation blocks passed in
         input_size = img_size // patch_size # H or W
         self.masker = CubeMaskGenerator(
             input_size=input_size, image_size=img_size, clip_size=obs_depth, \
