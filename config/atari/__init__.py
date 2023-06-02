@@ -10,15 +10,15 @@ from .model import EfficientZeroNet
 class AtariConfig(BaseConfig):
     def __init__(self):
         super(AtariConfig, self).__init__(
-            training_steps=100000,
-            last_steps=20000,
-            test_interval=10000,
+            training_steps=50000,
+            last_steps=0,
+            test_interval=5000,
             log_interval=1000,
             vis_interval=1000,
             test_episodes=32,
             checkpoint_interval=100,
             target_model_interval=200,
-            save_ckpt_interval=10000,
+            save_ckpt_interval=5000,
             max_moves=12000,
             test_max_moves=12000,
             history_length=400,
@@ -44,7 +44,7 @@ class AtariConfig(BaseConfig):
             auto_td_steps_ratio=0.3,
             # replay window
             start_transitions=8,
-            total_transitions=100 * 1000,
+            total_transitions=50 * 1000,
             transition_num=1,
             # frame skip & stack observation
             frame_skip=4,
