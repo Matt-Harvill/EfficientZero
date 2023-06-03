@@ -133,7 +133,7 @@ class AtariConfig(BaseConfig):
     def new_game(self, seed=None, save_video=False, save_path=None, video_callable=None, uid=None, test=False, final_test=False):
         if test:
             if final_test:
-                max_moves = 108000 // self.frame_skip
+                max_moves = 10000
             else:
                 max_moves = self.test_max_moves
             env = make_atari(self.env_name, skip=self.frame_skip, max_episode_steps=max_moves)

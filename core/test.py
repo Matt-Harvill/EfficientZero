@@ -91,8 +91,12 @@ def test(config, model, counter, test_episodes, device, render, save_video=False
         step = 0
         ep_ori_rewards = np.zeros(test_episodes)
         ep_clip_rewards = np.zeros(test_episodes)
+
+        steps_since_score_change = 0
+        last_score = 0
+
         # loop
-        while not dones.all():
+        while not dones.all() and steps_since_score_change < 200:
             if render:
                 for i in range(test_episodes):
                     envs[i].render()
@@ -141,6 +145,12 @@ def test(config, model, counter, test_episodes, device, render, save_video=False
                 dones[i] = done
                 ep_ori_rewards[i] += ori_reward
                 ep_clip_rewards[i] += clip_reward
+
+            if last_score == ep_ori_rewards.mean():
+                steps_since_score_change += 1
+            else:
+                steps_since_score_change = 0
+                last_score = ep_ori_rewards.mean()
 
             step += 1
             if use_pb:
