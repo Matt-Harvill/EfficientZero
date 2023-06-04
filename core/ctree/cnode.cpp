@@ -1,5 +1,6 @@
 #include <iostream>
 #include "cnode.h"
+#include <set>
 
 namespace tree{
 
@@ -31,9 +32,11 @@ namespace tree{
         this->ptr_node_pool = nullptr;
     }
 
-    CNode::CNode(float prior, int action_num, std::vector<CNode>* ptr_node_pool){
+    CNode::CNode(float prior, int action_num, std::vector<CNode>* ptr_node_pool, int index){
         this->prior = prior;
         this->action_num = action_num;
+        this->index = index;
+        this->is_group = false;
 
         this->is_reset = 0;
         this->visit_count = 0;
@@ -78,7 +81,7 @@ namespace tree{
             int index = ptr_node_pool->size();
             this->children_index.push_back(index);
 
-            ptr_node_pool->push_back(CNode(prior, action_num, ptr_node_pool));
+            ptr_node_pool->push_back(CNode(prior, action_num, ptr_node_pool, index));
         }
     }
 
@@ -195,7 +198,7 @@ namespace tree{
             this->node_pools.push_back(std::vector<CNode>());
             this->node_pools[i].reserve(pool_size);
 
-            this->roots.push_back(CNode(0, action_num, &this->node_pools[i]));
+            this->roots.push_back(CNode(0, action_num, &this->node_pools[i], -1));
         }
     }
 
@@ -273,7 +276,7 @@ namespace tree{
 
             for(int a = 0; a < node->action_num; ++a){
                 CNode* child = node->get_child(a);
-                if(child->expanded()){
+                if(child->expanded() && !child->is_group){
                     node_stack.push(child);
                 }
             }
@@ -314,9 +317,16 @@ namespace tree{
         update_tree_q(root, min_max_stats, discount);
     }
 
-    void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<float> &value_prefixs, const std::vector<float> &values, const std::vector<std::vector<float>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<int> is_reset_lst){
+    void cbatch_back_propagate(const std::vector<int> reusing_node_indices, int hidden_state_index_x, float discount, const std::vector<float> &value_prefixs, const std::vector<float> &values, const std::vector<std::vector<float>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<int> is_reset_lst){
         for(int i = 0; i < results.num; ++i){
-            results.nodes[i]->expand(0, hidden_state_index_x, i, value_prefixs[i], policies[i]);
+            if(reusing_node_indices[i] == -1) {
+                results.nodes[i]->expand(0, hidden_state_index_x, i, value_prefixs[i], policies[i]);
+            } else {
+                CNode* parent = results.search_paths[i][results.search_paths[i].size() - 2];
+                parent->children_index[parent->best_action] = results.all_nodes[i + results.num * reusing_node_indices[i]]->index;
+                parent->get_child(parent->best_action)->is_group = true;
+                results.search_paths[i][results.search_paths[i].size() - 1] = parent->get_child(parent->best_action);
+            }
             // reset
             results.nodes[i]->is_reset = is_reset_lst[i];
 
@@ -383,6 +393,14 @@ namespace tree{
         gettimeofday(&t1, NULL);
         srand(t1.tv_usec);
 
+        ////////////////////////////////
+        results.hidden_state_index_x_lst.clear();
+        results.hidden_state_index_y_lst.clear();
+        results.last_actions.clear();
+        results.search_paths.clear();
+        results.nodes.clear();
+        ////////////////////////////////
+
         int last_action = -1;
         float parent_q = 0.0;
         results.search_lens = std::vector<int>();
@@ -392,7 +410,10 @@ namespace tree{
             int search_len = 0;
             results.search_paths[i].push_back(node);
 
-            while(node->expanded()){
+            std::set<int> indices_visited = std::set<int>();
+            indices_visited.insert(node->index);
+
+            while(node->expanded() && indices_visited.size() - 1 == search_len){
                 float mean_q = node->get_mean_q(is_root, parent_q, discount);
                 is_root = 0;
                 parent_q = mean_q;
@@ -401,6 +422,7 @@ namespace tree{
                 node->best_action = action;
                 // next
                 node = node->get_child(action);
+                indices_visited.insert(node->index);
                 last_action = action;
                 results.search_paths[i].push_back(node);
                 search_len += 1;
@@ -414,6 +436,10 @@ namespace tree{
             results.last_actions.push_back(last_action);
             results.search_lens.push_back(search_len);
             results.nodes.push_back(node);
+
+            ////////////////////////////////
+            results.all_nodes.push_back(node);
+            ////////////////////////////////
         }
     }
 

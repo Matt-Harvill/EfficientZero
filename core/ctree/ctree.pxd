@@ -31,9 +31,10 @@ cdef extern from "cnode.cpp":
 cdef extern from "cnode.h" namespace "tree":
     cdef cppclass CNode:
         CNode() except +
-        CNode(float prior, int action_num, vector[CNode]* ptr_node_pool) except +
-        int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, best_action
+        CNode(float prior, int action_num, vector[CNode]* ptr_node_pool, int index) except +
+        int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, best_action, index
         float value_prefixs, prior, value_sum
+        bint is_group
         vector[int] children_index;
         vector[CNode]* ptr_node_pool;
 
@@ -69,6 +70,6 @@ cdef extern from "cnode.h" namespace "tree":
         vector[CNode*] nodes
 
     cdef void cback_propagate(vector[CNode*] &search_path, CMinMaxStats &min_max_stats, int to_play, float value, float discount)
-    void cbatch_back_propagate(int hidden_state_index_x, float discount, vector[float] value_prefixs, vector[float] values, vector[vector[float]] policies,
+    void cbatch_back_propagate(vector[int] reusing_node_indices, int hidden_state_index_x, float discount, vector[float] value_prefixs, vector[float] values, vector[vector[float]] policies,
                                CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, vector[int] is_reset_lst)
     void cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, CMinMaxStatsList *min_max_stats_lst, CSearchResults &results)
