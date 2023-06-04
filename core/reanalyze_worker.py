@@ -328,10 +328,10 @@ class BatchWorker_GPU(object):
                 _, value_prefix_pool, policy_logits_pool, hidden_state_roots, reward_hidden_roots = concat_output(network_output)
                 value_prefix_pool = value_prefix_pool.squeeze().tolist()
                 policy_logits_pool = policy_logits_pool.tolist()
-                roots = cytree.Roots(batch_size, self.config.action_space_size, self.config.num_simulations)
+                roots = cytree.Roots(batch_size, self.config.action_space_size, self.config.num_simulations * self.config.searches)
                 noises = [np.random.dirichlet([self.config.root_dirichlet_alpha] * self.config.action_space_size).astype(np.float32).tolist() for _ in range(batch_size)]
                 roots.prepare(self.config.root_exploration_fraction, noises, value_prefix_pool, policy_logits_pool)
-                MCTS(self.config).search(roots, self.model, hidden_state_roots, reward_hidden_roots)
+                MCTS(self.config).search(roots, self.model, hidden_state_roots, reward_hidden_roots, self.config.searches)
 
                 roots_values = roots.get_values()
                 value_lst = np.array(roots_values)
@@ -417,11 +417,11 @@ class BatchWorker_GPU(object):
             value_prefix_pool = value_prefix_pool.squeeze().tolist()
             policy_logits_pool = policy_logits_pool.tolist()
 
-            roots = cytree.Roots(batch_size, self.config.action_space_size, self.config.num_simulations)
+            roots = cytree.Roots(batch_size, self.config.action_space_size, self.config.num_simulations * self.config.searches)
             noises = [np.random.dirichlet([self.config.root_dirichlet_alpha] * self.config.action_space_size).astype(np.float32).tolist() for _ in range(batch_size)]
             roots.prepare(self.config.root_exploration_fraction, noises, value_prefix_pool, policy_logits_pool)
             # do MCTS for a new policy with the recent target model
-            MCTS(self.config).search(roots, self.model, hidden_state_roots, reward_hidden_roots)
+            MCTS(self.config).search(roots, self.model, hidden_state_roots, reward_hidden_roots, self.config.searches)
 
             roots_distributions = roots.get_distributions()
             policy_index = 0

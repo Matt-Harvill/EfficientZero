@@ -52,7 +52,10 @@ if __name__ == '__main__':
     parser.add_argument('--info', type=str, default='none', help='debug string')
     parser.add_argument('--load_model', action='store_true', default=False, help='choose to load model')
     parser.add_argument('--model_path', type=str, default='./results/test_model.p', help='load model path')
-    parser.add_argument('--object_store_memory', type=int, default=20_000_000_000, help='object store memory')
+    parser.add_argument('--object_store_memory', type=int, default=20_000_000_000, help='object store memory') # default is 150 * 1024^3
+    
+    parser.add_argument('--searches', type=int, default=1)
+    parser.add_argument('--simulations', type=int, default=50)
 
     # Process arguments
     args = parser.parse_args()
@@ -126,6 +129,7 @@ if __name__ == '__main__':
             std_score = test_score.std()
             logging.getLogger('test').info('Test Mean Score: {} (max: {}, min: {})'.format(mean_score, test_score.max(), test_score.min()))
             logging.getLogger('test').info('Test Std Score: {}'.format(std_score))
+            logging.getLogger('test').info('Test Scores: {}'.format(test_score.astype(int).tolist()))
             if args.save_video:
                 logging.getLogger('test').info('Saving video in path: {}'.format(test_path))
         else:

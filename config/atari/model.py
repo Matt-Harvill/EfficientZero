@@ -383,10 +383,10 @@ class EfficientZeroNet(BaseNet):
         inverse_reward_transform,
         lstm_hidden_size,
         bn_mt=0.1,
-        proj_hid=256,
-        proj_out=256,
+        proj_hid=64, # default is 256
+        proj_out=64, # default is 256
         pred_hid=64,
-        pred_out=256,
+        pred_out=64, # default is 256
         init_zero=False,
         state_norm=False
     ):

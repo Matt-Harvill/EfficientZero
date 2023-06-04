@@ -118,20 +118,29 @@ def test(config, model, counter, test_episodes, device, render, save_video=False
             value_prefix_pool = network_output.value_prefix
             policy_logits_pool = network_output.policy_logits.tolist()
 
-            roots = cytree.Roots(test_episodes, config.action_space_size, config.num_simulations)
+            roots = cytree.Roots(test_episodes, config.action_space_size, config.num_simulations * config.searches)
             roots.prepare_no_noise(value_prefix_pool, policy_logits_pool)
             # do MCTS for a policy (argmax in testing)
-            MCTS(config).search(roots, model, hidden_state_roots, reward_hidden_roots)
+            MCTS(config).search(roots, model, hidden_state_roots, reward_hidden_roots, config.searches)
 
             roots_distributions = roots.get_distributions()
             roots_values = roots.get_values()
+            roots_children_values = roots.get_children_values()
             for i in range(test_episodes):
                 if dones[i]:
                     continue
 
                 distributions, value, env = roots_distributions[i], roots_values[i], envs[i]
+                
+                # Pick the action with highest value from top two visited actions
+                # children_values = roots_children_values[i]
+                # top_two_visited_actions = np.argsort(distributions)[-2:]
+                # action = max(top_two_visited_actions, key=lambda x: children_values[x])
+
+                # Pick the top visited action
                 # select the argmax, not sampling
                 action, _ = select_action(distributions, temperature=1, deterministic=True)
+                # input(f'action: {action}, root_values: {value}, root_distribution: {distributions}')
 
                 obs, ori_reward, done, info = env.step(action)
                 if config.clip_reward:

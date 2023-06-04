@@ -20,6 +20,7 @@ class DiscreteSupport(object):
 class BaseConfig(object):
 
     def __init__(self,
+                 searches: int,
                  training_steps: int,
                  last_steps: int,
                  test_interval: int,
@@ -67,15 +68,17 @@ class BaseConfig(object):
                  value_loss_coeff: float = 1,
                  policy_loss_coeff: float = 1,
                  consistency_coeff: float = 1,
-                 proj_hid: int = 256,
-                 proj_out: int = 256,
+                 proj_hid: int = 64, # default is 256
+                 proj_out: int = 64, # default is 256
                  pred_hid: int = 64,
-                 pred_out: int = 256,
+                 pred_out: int = 64, # default is 256
                  value_support: DiscreteSupport = DiscreteSupport(-300, 300, delta=1),
                  reward_support: DiscreteSupport = DiscreteSupport(-300, 300, delta=1)):
         """Base Config for EfficietnZero
         Parameters
         ----------
+        searches: int:
+            how many parallel searches per simulation
         training_steps: int
             training steps while collecting data
         last_steps: int
@@ -191,6 +194,9 @@ class BaseConfig(object):
         reward_support: DiscreteSupport
             support of reward to represent the reward scalars
         """
+        # Searches
+        self.searches = searches
+
         # Self-Play
         self.action_space_size = None
         self.num_actors = num_actors
@@ -370,6 +376,10 @@ class BaseConfig(object):
         return hparams
 
     def set_config(self, args):
+        self.searches = args.searches
+        self.num_simulations = args.simulations
+        self.test_episodes = args.test_episodes
+
         # reset config from the args
         self.set_game(args.env)
         self.case = args.case

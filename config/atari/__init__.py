@@ -10,6 +10,7 @@ from .model import EfficientZeroNet
 class AtariConfig(BaseConfig):
     def __init__(self):
         super(AtariConfig, self).__init__(
+            searches=5, # parallel searches
             training_steps=100000,
             last_steps=20000,
             test_interval=10000,
@@ -102,6 +103,7 @@ class AtariConfig(BaseConfig):
         self.obs_shape = (obs_shape[0] * self.stacked_observations, obs_shape[1], obs_shape[2])
 
         game = self.new_game()
+        self.max_episode_steps = game.get_max_episode_steps()
         self.action_space_size = game.action_space_size
 
     def get_uniform_network(self):

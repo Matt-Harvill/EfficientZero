@@ -278,11 +278,11 @@ class DataWorker(object):
                     value_prefix_pool = network_output.value_prefix
                     policy_logits_pool = network_output.policy_logits.tolist()
 
-                    roots = cytree.Roots(env_nums, self.config.action_space_size, self.config.num_simulations)
+                    roots = cytree.Roots(env_nums, self.config.action_space_size, self.config.num_simulations * self.config.searches)
                     noises = [np.random.dirichlet([self.config.root_dirichlet_alpha] * self.config.action_space_size).astype(np.float32).tolist() for _ in range(env_nums)]
                     roots.prepare(self.config.root_exploration_fraction, noises, value_prefix_pool, policy_logits_pool)
                     # do MCTS for a policy
-                    MCTS(self.config).search(roots, model, hidden_state_roots, reward_hidden_roots)
+                    MCTS(self.config).search(roots, model, hidden_state_roots, reward_hidden_roots, self.config.searches)
 
                     roots_distributions = roots.get_distributions()
                     roots_values = roots.get_values()
