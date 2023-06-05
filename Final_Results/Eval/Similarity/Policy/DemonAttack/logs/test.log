@@ -1,0 +1,2 @@
+[2023-06-05 16:32:08,175][test][INFO][main.py><module>] ==> Test Mean Score: 68.28125 (max: 205.0, min: 10.0)
+[2023-06-05 16:32:08,175][test][INFO][main.py><module>] ==> Test Std Score: 38.742123695501
