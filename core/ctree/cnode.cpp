@@ -2,6 +2,7 @@
 #include "cnode.h"
 #include <queue>
 #include <algorithm>
+#include <iomanip>
 
 namespace tree{
 
@@ -465,9 +466,12 @@ namespace tree{
     std::tuple<int, int> cselect_child(CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q){
         float max_score = FLOAT_MIN;
         float second_max_score = FLOAT_MIN;
-        float max_action, prev_max_a = -1; //
+        int max_action = -1;
+        int prev_max_a = -1;
         const float epsilon = 0.000001;
         std::vector<int> second_max_index_lst;
+        std::vector<float> all_scores;
+
         for(int a = 0; a < root->action_num; ++a){
             CNode* child = root->get_child(a);
             float temp_score = cucb_score(child, min_max_stats, mean_q, root->is_reset, root->visit_count - 1, root->value_prefix, pb_c_base, pb_c_init, discount);
@@ -485,29 +489,42 @@ namespace tree{
                         second_max_index_lst.push_back(prev_max_a);
                     }
                 } else {
-                    second_max_index_lst.clear();
-                    second_max_index_lst.push_back(a);
+                    if (temp_score >= second_max_score + epsilon) {
+                        second_max_index_lst.clear();
+                        second_max_score = temp_score;
+                    } else {
+                        second_max_index_lst.push_back(a);
+                    }
                 }
             } else if(temp_score >= second_max_score - epsilon){
                 second_max_index_lst.push_back(a);
             }
 
-            // if(max_score < temp_score){
-            //     max_score = temp_score;
-
-            //     second_max_index_lst.clear();
-            //     second_max_index_lst.push_back(a);
-            // }
-            // else if(temp_score >= max_score - epsilon){
-            //     second_max_index_lst.push_back(a);
-            // }
+            all_scores.push_back(temp_score);
         }
 
+        // Set second action
         int second_action = 0;
         if(second_max_index_lst.size() > 0){
             int rand_index = rand() % second_max_index_lst.size();
             second_action = second_max_index_lst[rand_index];
         }
+
+        // Print the scores in the desired format
+        // std::cout << "ucb scores: [";
+        // for (size_t i = 0; i < all_scores.size(); ++i) {
+        //     std::cout << std::fixed << std::setprecision(4) << all_scores[i];
+        //     if (i != all_scores.size() - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+
+        // Set second action to -1 if it is not close to best action
+        if (all_scores[max_action] - all_scores[second_action] > 0.1) {
+            second_action = -1;
+        }
+
         return std::make_tuple(max_action, second_action);
     }
 
@@ -584,20 +601,22 @@ namespace tree{
                 
                 // Set best_action
                 node->best_action = best_action;
-                // Add new nodes for top two actions
+                // Add new node for top action
                 nodes.push(std::make_tuple(node->get_child(best_action), index));
-                nodes.push(std::make_tuple(node->get_child(second_best_action), j + 1));
-
-                // Copy info from index to j + 1
-                results.search_paths[j + 1][i] = results.search_paths[index][i];
-                parent_qs[j + 1] = parent_qs[index];
-                min_max_stats_lst->stats_lsts[j + 1][i] = min_max_stats_lst->stats_lsts[index][i];
-
-                // Add new action nodes to paths
+                // Add new action node to path
                 results.search_paths[index][i].push_back(node->get_child(best_action));
-                results.search_paths[j + 1][i].push_back(node->get_child(second_best_action));
 
-                j++;
+                // Add new node for second best action if close to top action
+                if (second_best_action != -1) {
+                    nodes.push(std::make_tuple(node->get_child(second_best_action), j + 1));
+
+                    // Copy info from index to j + 1
+                    results.search_paths[j + 1][i] = results.search_paths[index][i];
+                    parent_qs[j + 1] = parent_qs[index];
+                    min_max_stats_lst->stats_lsts[j + 1][i] = min_max_stats_lst->stats_lsts[index][i];
+                    results.search_paths[j + 1][i].push_back(node->get_child(second_best_action));
+                    j++;
+                }
             }
 
             int num_searched = j + 1;
