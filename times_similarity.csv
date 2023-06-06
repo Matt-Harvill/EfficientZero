@@ -1,0 +1,4 @@
+group,mean,std
+Default (No Similarity),0.3,0.02
+Policy-based,0.35,0.02
+Policy and State-based,5.87,0.04

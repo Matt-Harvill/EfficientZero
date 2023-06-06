@@ -1,0 +1,5 @@
+group,mean,std
+Default (1 Path),0.3,0.02
+2 Paths,0.33,0.02
+4 Paths,0.41,0.03
+8 Paths,0.59,0.03
