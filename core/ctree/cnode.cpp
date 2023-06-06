@@ -120,9 +120,11 @@ namespace tree{
         this->ptr_node_pool = nullptr;
     }
 
-    CNode::CNode(float prior, int action_num, std::vector<CNode>* ptr_node_pool){
+    CNode::CNode(float prior, int action_num, std::vector<CNode>* ptr_node_pool, int index){
         this->prior = prior;
         this->action_num = action_num;
+        this->index = index;
+        this->is_group = false;
 
         this->is_reset = 0;
         this->visit_count = 0;
@@ -194,7 +196,7 @@ namespace tree{
             int index = ptr_node_pool->size();
             this->children_index.push_back(index);
 
-            ptr_node_pool->push_back(CNode(prior, action_num, ptr_node_pool));
+            ptr_node_pool->push_back(CNode(prior, action_num, ptr_node_pool, index));
         }
     }
 
@@ -322,7 +324,7 @@ namespace tree{
             this->node_pools.push_back(std::vector<CNode>());
             this->node_pools[i].reserve(pool_size);
 
-            this->roots.push_back(CNode(0, action_num, &this->node_pools[i]));
+            this->roots.push_back(CNode(0, action_num, &this->node_pools[i], -1));
         }
     }
 
@@ -410,7 +412,7 @@ namespace tree{
 
             for(int a = 0; a < node->action_num; ++a){
                 CNode* child = node->get_child(a);
-                if(child->expanded()){
+                if(child->expanded() && !child->is_group){
                     node_stack.push(child);
                 }
             }

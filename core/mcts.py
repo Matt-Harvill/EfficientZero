@@ -65,6 +65,7 @@ class MCTS(object):
 
                 # obtain the search horizon for leaf nodes
                 search_lens = results.get_search_len()
+                # input(f"len of hidden_state_index_x_lst: {len(hidden_state_index_x_lst)}")
 
                 # obtain the states for leaf nodes
                 for i in range(searches):
@@ -126,7 +127,7 @@ class MCTS(object):
                 hidden_state_index_x += 1
 
                 # backpropagation along the search path to update the attributes
-                tree.batch_back_propagate(hidden_state_index_x, discount,
+                tree.batch_back_propagate(reusing_node_indices, hidden_state_index_x, discount,
                                           value_prefix_pool, value_pool, policy_logits_pool,
                                           min_max_stats_lst, results, is_reset_lst)
                 

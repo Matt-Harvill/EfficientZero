@@ -21,11 +21,12 @@ namespace tree {
         public:
             int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, hidden_state_index_z, best_action, is_reset;
             float value_prefix, prior, value_sum;
+            bool is_group;
             std::vector<int> children_index;
             std::vector<CNode>* ptr_node_pool;
 
             CNode();
-            CNode(float prior, int action_num, std::vector<CNode> *ptr_node_pool);
+            CNode(float prior, int action_num, std::vector<CNode> *ptr_node_pool, int index);
             ~CNode();
 
             void print();

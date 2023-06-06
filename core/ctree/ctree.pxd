@@ -34,6 +34,7 @@ cdef extern from "cnode.h" namespace "tree":
         CNode(float prior, int action_num, vector[CNode]* ptr_node_pool) except +
         int visit_count, to_play, action_num, hidden_state_index_x, hidden_state_index_y, hidden_state_index_z, best_action
         float value_prefixs, prior, value_sum
+        bint is_group
         vector[int] children_index;
         vector[CNode]* ptr_node_pool;
 
