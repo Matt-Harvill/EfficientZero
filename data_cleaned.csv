@@ -17,36 +17,36 @@ Updating All Paths vs Only Best Path (8 Paths),All Paths,DemonAttack,1183.4375,3
 Updating All Paths vs Only Best Path (8 Paths),Single Path,MsPacman,764.375,1070.0,360.0,315.09857088695276
 Updating All Paths vs Only Best Path (8 Paths),Single Path,Breakout,86.9375,97.0,78.0,8.230801525367989
 Updating All Paths vs Only Best Path (8 Paths),Single Path,DemonAttack,1446.40625,3005.0,50.0,971.6973184644164
-More Search Paths,1 (Default),MsPacman,415.9375,910.0,270.0,239.9200306221846
-More Search Paths,1 (Default),Breakout,329.34375,375.0,278.0,42.107458792208064
-More Search Paths,1 (Default),DemonAttack,1534.375,5670.0,175.0,1400.7200994042314
-More Search Paths,2,MsPacman,383.125,500.0,230.0,88.68615661420897
-More Search Paths,2,Breakout,44.4375,93.0,16.0,28.86058893629858
-More Search Paths,2,DemonAttack,1671.5625,4510.0,140.0,1479.9263270831254
-More Search Paths,4,MsPacman,490.3125,1280.0,280.0,380.1684197086207
-More Search Paths,4,Breakout,13.75,24.0,2.0,9.614442261514705
-More Search Paths,4,DemonAttack,865.78125,4160.0,70.0,932.9130363535701
-More Search Paths,8,MsPacman,762.5,1250.0,420.0,331.8037823774768
-More Search Paths,8,Breakout,79.53125,249.0,14.0,91.30648401640214
-More Search Paths,8,DemonAttack,1183.4375,3825.0,60.0,1224.2615360264122
-Naive vs Dynamic Branching (2 Paths),Naive,MsPacman,383.125,500.0,230.0,88.68615661420897
-Naive vs Dynamic Branching (2 Paths),Naive,Breakout,44.4375,93.0,16.0,28.86058893629858
-Naive vs Dynamic Branching (2 Paths),Naive,DemonAttack,1671.5625,4510.0,140.0,1479.9263270831254
-Naive vs Dynamic Branching (2 Paths),Dynamic,MsPacman,529.375,1140.0,290.0,226.78372819715264
-Naive vs Dynamic Branching (2 Paths),Dynamic,Breakout,138.9375,425.0,32.0,104.35933639952871
-Naive vs Dynamic Branching (2 Paths),Dynamic,DemonAttack,2404.21875,4850.0,235.0,1313.1499041992265
-Naive vs Dynamic Branching (4 Paths),Naive,MsPacman,490.3125,1280.0,280.0,380.1684197086207
-Naive vs Dynamic Branching (4 Paths),Naive,Breakout,13.75,24.0,2.0,9.614442261514705
-Naive vs Dynamic Branching (4 Paths),Naive,DemonAttack,865.78125,4160.0,70.0,932.9130363535701
-Naive vs Dynamic Branching (4 Paths),Dynamic,MsPacman,506.25,1210.0,160.0,272.8409564196695
-Naive vs Dynamic Branching (4 Paths),Dynamic,Breakout,138.0625,415.0,30.0,109.64372345807124
-Naive vs Dynamic Branching (4 Paths),Dynamic,DemonAttack,1959.53125,6010.0,130.0,1454.3610922062778
-Naive vs Dynamic Branching (8 Paths),Naive,MsPacman,762.5,1250.0,420.0,331.8037823774768
-Naive vs Dynamic Branching (8 Paths),Naive,Breakout,79.53125,249.0,14.0,91.30648401640214
-Naive vs Dynamic Branching (8 Paths),Naive,DemonAttack,1183.4375,3825.0,60.0,1224.2615360264122
-Naive vs Dynamic Branching (8 Paths),Dynamic,MsPacman,442.1875,860.0,170.0,185.95588144436303
-Naive vs Dynamic Branching (8 Paths),Dynamic,Breakout,141.96875,403.0,29.0,89.71116303692367
-Naive vs Dynamic Branching (8 Paths),Dynamic,DemonAttack,1914.375,5350.0,250.0,1157.7866478220415
+More Search Paths,1 Path (Default),MsPacman,415.9375,910.0,270.0,239.9200306221846
+More Search Paths,1 Path (Default),Breakout,329.34375,375.0,278.0,42.107458792208064
+More Search Paths,1 Path (Default),DemonAttack,1534.375,5670.0,175.0,1400.7200994042314
+More Search Paths,2 Paths,MsPacman,383.125,500.0,230.0,88.68615661420897
+More Search Paths,2 Paths,Breakout,44.4375,93.0,16.0,28.86058893629858
+More Search Paths,2 Paths,DemonAttack,1671.5625,4510.0,140.0,1479.9263270831254
+More Search Paths,4 Paths,MsPacman,490.3125,1280.0,280.0,380.1684197086207
+More Search Paths,4 Paths,Breakout,13.75,24.0,2.0,9.614442261514705
+More Search Paths,4 Paths,DemonAttack,865.78125,4160.0,70.0,932.9130363535701
+More Search Paths,8 Paths,MsPacman,762.5,1250.0,420.0,331.8037823774768
+More Search Paths,8 Paths,Breakout,79.53125,249.0,14.0,91.30648401640214
+More Search Paths,8 Paths,DemonAttack,1183.4375,3825.0,60.0,1224.2615360264122
+Naive vs Dynamic Branching,Naive (2 Paths),MsPacman,383.125,500.0,230.0,88.68615661420897
+Naive vs Dynamic Branching,Naive (2 Paths),Breakout,44.4375,93.0,16.0,28.86058893629858
+Naive vs Dynamic Branching,Naive (2 Paths),DemonAttack,1671.5625,4510.0,140.0,1479.9263270831254
+Naive vs Dynamic Branching,Dynamic (2 Paths),MsPacman,529.375,1140.0,290.0,226.78372819715264
+Naive vs Dynamic Branching,Dynamic (2 Paths),Breakout,138.9375,425.0,32.0,104.35933639952871
+Naive vs Dynamic Branching,Dynamic (2 Paths),DemonAttack,2404.21875,4850.0,235.0,1313.1499041992265
+Naive vs Dynamic Branching,Naive (4 Paths),MsPacman,490.3125,1280.0,280.0,380.1684197086207
+Naive vs Dynamic Branching,Naive (4 Paths),Breakout,13.75,24.0,2.0,9.614442261514705
+Naive vs Dynamic Branching,Naive (4 Paths),DemonAttack,865.78125,4160.0,70.0,932.9130363535701
+Naive vs Dynamic Branching,Dynamic (4 Paths),MsPacman,506.25,1210.0,160.0,272.8409564196695
+Naive vs Dynamic Branching,Dynamic (4 Paths),Breakout,138.0625,415.0,30.0,109.64372345807124
+Naive vs Dynamic Branching,Dynamic (4 Paths),DemonAttack,1959.53125,6010.0,130.0,1454.3610922062778
+Naive vs Dynamic Branching,Naive (8 Paths),MsPacman,762.5,1250.0,420.0,331.8037823774768
+Naive vs Dynamic Branching,Naive (8 Paths),Breakout,79.53125,249.0,14.0,91.30648401640214
+Naive vs Dynamic Branching,Naive (8 Paths),DemonAttack,1183.4375,3825.0,60.0,1224.2615360264122
+Naive vs Dynamic Branching,Dynamic (8 Paths),MsPacman,442.1875,860.0,170.0,185.95588144436303
+Naive vs Dynamic Branching,Dynamic (8 Paths),Breakout,141.96875,403.0,29.0,89.71116303692367
+Naive vs Dynamic Branching,Dynamic (8 Paths),DemonAttack,1914.375,5350.0,250.0,1157.7866478220415
 Unrestricted vs Restricted Max Depth (2 Paths),Unrestricted,MsPacman,383.125,500.0,230.0,88.68615661420897
 Unrestricted vs Restricted Max Depth (2 Paths),Unrestricted,Breakout,44.4375,93.0,16.0,28.86058893629858
 Unrestricted vs Restricted Max Depth (2 Paths),Unrestricted,DemonAttack,1671.5625,4510.0,140.0,1479.9263270831254
@@ -65,46 +65,46 @@ Unrestricted vs Restricted Max Depth (8 Paths),Unrestricted,DemonAttack,1183.437
 Unrestricted vs Restricted Max Depth (8 Paths),Max Depth of 10,MsPacman,676.25,1030.0,420.0,213.52327156541978
 Unrestricted vs Restricted Max Depth (8 Paths),Max Depth of 10,Breakout,79.53125,249.0,14.0,91.30648401640214
 Unrestricted vs Restricted Max Depth (8 Paths),Max Depth of 10,DemonAttack,1236.40625,3825.0,60.0,1212.4150964958071
-Reduced Simulations (10),1,MsPacman,747.5,1040.0,270.0,296.60579899927785
-Reduced Simulations (10),1,Breakout,312.53125,407.0,151.0,109.17932049356921
-Reduced Simulations (10),1,DemonAttack,2590.9375,5590.0,175.0,1396.128820558386
-Reduced Simulations (10),2,MsPacman,497.5,1250.0,280.0,362.284418654736
-Reduced Simulations (10),2,Breakout,4.0625,9.0,2.0,2.680222705298946
-Reduced Simulations (10),2,DemonAttack,1534.0625,5810.0,90.0,1496.785324819077
-Reduced Simulations (10),4,MsPacman,590.0,1120.0,300.0,300.71789105405753
-Reduced Simulations (10),4,Breakout,6.09375,13.0,2.0,3.608664702836771
-Reduced Simulations (10),4,DemonAttack,1716.40625,5310.0,70.0,1853.1502883497974
-Reduced Simulations (10),8,MsPacman,348.75,390.0,290.0,41.589511899035315
-Reduced Simulations (10),8,Breakout,94.71875,237.0,33.0,82.57618996077198
-Reduced Simulations (10),8,DemonAttack,1624.375,3440.0,295.0,922.6090298035241
-Reduced Simulations (25),1,MsPacman,418.75,860.0,280.0,214.58899668901944
-Reduced Simulations (25),1,Breakout,257.15625,397.0,91.0,119.63541213176599
-Reduced Simulations (25),1,DemonAttack,2799.0625,5640.0,400.0,1767.9341923821005
-Reduced Simulations (25),2,MsPacman,825.0,1970.0,340.0,618.1474338699466
-Reduced Simulations (25),2,Breakout,12.125,39.0,5.0,12.970519457600764
-Reduced Simulations (25),2,DemonAttack,1482.65625,4160.0,140.0,1079.416063474107
-Reduced Simulations (25),4,MsPacman,412.8125,630.0,300.0,118.67061491266487
-Reduced Simulations (25),4,Breakout,22.8125,50.0,8.0,16.379174086320713
-Reduced Simulations (25),4,DemonAttack,1764.375,3840.0,140.0,932.1419805346179
-Reduced Simulations (25),8,MsPacman,619.6875,1080.0,280.0,379.3537627910787
-Reduced Simulations (25),8,Breakout,46.5,99.0,26.0,28.241149055943172
-Reduced Simulations (25),8,DemonAttack,1367.96875,3350.0,150.0,817.2131180257923
-Simulation Counts,10,MsPacman,747.5,1040.0,270.0,296.60579899927785
-Simulation Counts,10,Breakout,312.53125,407.0,151.0,109.17932049356921
-Simulation Counts,10,DemonAttack,2590.9375,5590.0,175.0,1396.128820558386
-Simulation Counts,25,MsPacman,418.75,860.0,280.0,214.58899668901944
-Simulation Counts,25,Breakout,257.15625,397.0,91.0,119.63541213176599
-Simulation Counts,25,DemonAttack,2799.0625,5640.0,400.0,1767.9341923821005
-Simulation Counts,50 (Default),MsPacman,415.9375,910.0,270.0,239.9200306221846
-Simulation Counts,50 (Default),Breakout,329.34375,375.0,278.0,42.107458792208064
-Simulation Counts,50 (Default),DemonAttack,1534.375,5670.0,175.0,1400.7200994042314
+Reduced Simulations (10),1 Path,MsPacman,747.5,1040.0,270.0,296.60579899927785
+Reduced Simulations (10),1 Path,Breakout,312.53125,407.0,151.0,109.17932049356921
+Reduced Simulations (10),1 Path,DemonAttack,2590.9375,5590.0,175.0,1396.128820558386
+Reduced Simulations (10),2 Paths,MsPacman,497.5,1250.0,280.0,362.284418654736
+Reduced Simulations (10),2 Paths,Breakout,4.0625,9.0,2.0,2.680222705298946
+Reduced Simulations (10),2 Paths,DemonAttack,1534.0625,5810.0,90.0,1496.785324819077
+Reduced Simulations (10),4 Paths,MsPacman,590.0,1120.0,300.0,300.71789105405753
+Reduced Simulations (10),4 Paths,Breakout,6.09375,13.0,2.0,3.608664702836771
+Reduced Simulations (10),4 Paths,DemonAttack,1716.40625,5310.0,70.0,1853.1502883497974
+Reduced Simulations (10),8 Paths,MsPacman,348.75,390.0,290.0,41.589511899035315
+Reduced Simulations (10),8 Paths,Breakout,94.71875,237.0,33.0,82.57618996077198
+Reduced Simulations (10),8 Paths,DemonAttack,1624.375,3440.0,295.0,922.6090298035241
+Reduced Simulations (25),1 Path,MsPacman,418.75,860.0,280.0,214.58899668901944
+Reduced Simulations (25),1 Path,Breakout,257.15625,397.0,91.0,119.63541213176599
+Reduced Simulations (25),1 Path,DemonAttack,2799.0625,5640.0,400.0,1767.9341923821005
+Reduced Simulations (25),2 Paths,MsPacman,825.0,1970.0,340.0,618.1474338699466
+Reduced Simulations (25),2 Paths,Breakout,12.125,39.0,5.0,12.970519457600764
+Reduced Simulations (25),2 Paths,DemonAttack,1482.65625,4160.0,140.0,1079.416063474107
+Reduced Simulations (25),4 Paths,MsPacman,412.8125,630.0,300.0,118.67061491266487
+Reduced Simulations (25),4 Paths,Breakout,22.8125,50.0,8.0,16.379174086320713
+Reduced Simulations (25),4 Paths,DemonAttack,1764.375,3840.0,140.0,932.1419805346179
+Reduced Simulations (25),8 Paths,MsPacman,619.6875,1080.0,280.0,379.3537627910787
+Reduced Simulations (25),8 Paths,Breakout,46.5,99.0,26.0,28.241149055943172
+Reduced Simulations (25),8 Paths,DemonAttack,1367.96875,3350.0,150.0,817.2131180257923
+Simulation Counts,10 Simulations,MsPacman,747.5,1040.0,270.0,296.60579899927785
+Simulation Counts,10 Simulations,Breakout,312.53125,407.0,151.0,109.17932049356921
+Simulation Counts,10 Simulations,DemonAttack,2590.9375,5590.0,175.0,1396.128820558386
+Simulation Counts,25 Simulations,MsPacman,418.75,860.0,280.0,214.58899668901944
+Simulation Counts,25 Simulations,Breakout,257.15625,397.0,91.0,119.63541213176599
+Simulation Counts,25 Simulations,DemonAttack,2799.0625,5640.0,400.0,1767.9341923821005
+Simulation Counts,50 Simulations (Default),MsPacman,415.9375,910.0,270.0,239.9200306221846
+Simulation Counts,50 Simulations (Default),Breakout,329.34375,375.0,278.0,42.107458792208064
+Simulation Counts,50 Simulations (Default),DemonAttack,1534.375,5670.0,175.0,1400.7200994042314
 Similarity-based Search,No Similarity (Default),MsPacman,415.9375,910.0,270.0,239.9200306221846
 Similarity-based Search,No Similarity (Default),Breakout,329.34375,375.0,278.0,42.107458792208064
 Similarity-based Search,No Similarity (Default),DemonAttack,1534.375,5670.0,175.0,1400.7200994042314
-Similarity-based Search,Policy and State-based Similarity,MsPacman,341.25,1060.0,170.0,192.073390921283
-Similarity-based Search,Policy and State-based Similarity,Breakout,29.65625,347.0,3.0,58.29483755820493
-Similarity-based Search,Policy and State-based Similarity,DemonAttack,60.625,140.0,20.0,29.04065038872236
 Similarity-based Search,Policy-based Similarity,MsPacman,346.5625,1070.0,120.0,217.2787578060727
 Similarity-based Search,Policy-based Similarity,Breakout,29.28125,252.0,3.0,42.51414057037376
 Similarity-based Search,Policy-based Similarity,DemonAttack,68.28125,205.0,10.0,38.742123695501
+Similarity-based Search,Policy and State-based Similarity,MsPacman,341.25,1060.0,170.0,192.073390921283
+Similarity-based Search,Policy and State-based Similarity,Breakout,29.65625,347.0,3.0,58.29483755820493
+Similarity-based Search,Policy and State-based Similarity,DemonAttack,60.625,140.0,20.0,29.04065038872236
 
