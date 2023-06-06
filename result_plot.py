@@ -1,63 +1,79 @@
 import matplotlib.pyplot as plt
 import csv
+from collections import defaultdict
 
 # CSV file path
-csv_file = 'test_scores.csv'
+csv_file = 'data.csv'
 
-# Lists to store the extracted data
-titles = []
-games = []
-mean_scores = []
-max_scores = []
-min_scores = []
-std_scores = []
+# Dictionary to store the extracted data
+data = defaultdict(lambda: {'search_paths': set(), 'games': defaultdict(list)})
 
 # Read the data from the CSV file
 with open(csv_file, 'r') as file:
-    reader = csv.reader(file)
-    next(reader)  # Skip header row
-    i = 0
+    reader = csv.DictReader(file)
     for row in reader:
-        if i == 9:
-            break
-        titles.append(row[0])
-        games.append(row[1])
-        mean_scores.append(float(row[2]))
-        max_scores.append(float(row[3]))
-        min_scores.append(float(row[4]))
-        std_scores.append(float(row[5]))
-        i += 1
+        title = row['Title']
+        search_paths = int(row['Search Paths'])
+        game = row['Game']
+        mean_score = float(row['Mean Score'])
+        data[title]['search_paths'].add(search_paths)
+        data[title]['games'][game].append((search_paths, mean_score))
+
+# Sort the data dictionary by title and search paths
+sorted_data = dict(sorted(data.items()))
+for title in sorted_data:
+    sorted_data[title]['games'] = dict(sorted(sorted_data[title]['games'].items()))
 
 # Plotting
-plt.figure(figsize=(10, 6))
-x = range(len(titles))
-width = 0.2
+for title, scores in sorted_data.items():
+    search_paths = sorted(scores['search_paths'])
+    games = scores['games']
+    num_games = len(games)
+    num_search_paths = len(search_paths)
+    
+    # Check if only one distinct number of search paths
+    if len(search_paths) == 1:
+        legend = False
+    else:
+        legend = True
+    
+    plt.figure(figsize=(10, 6))
+    x = range(num_search_paths)
+    width = 0.2
+    
+    # Sort the mean scores for each game by increasing search paths
+    sorted_scores = []
+    for game, mean_scores in games.items():
+        sorted_scores.append(sorted(mean_scores, key=lambda x: x[0]))  # Sort by increasing search paths
+    
+    print(sorted_scores)
 
-# Plot Mean Scores
-plt.bar(x, mean_scores, width, label='Mean Score')
-# Plot Max Scores
-plt.bar([i + width for i in x], max_scores, width, label='Max Score')
-# Plot Min Scores
-plt.bar([i + 2 * width for i in x], min_scores, width, label='Min Score')
-# Plot Std Scores
-plt.bar([i + 3 * width for i in x], std_scores, width, label='Std Score')
+    # Plot Mean Scores for each game
+    handles = []
+    labels = []
+    colors = ['#FFB6C1', '#FF69B4', '#FF1493', '#C71585']
+    offset = (num_search_paths - 1) * width / 2
+    for i, game in enumerate(games.keys()):
+        mean_scores = [x[1] for x in sorted_scores[i]]
+        search_paths = [x[0] for x in sorted_scores[i]]
 
-# Set x-axis labels and tick positions
-plt.xticks([i + 1.5 * width for i in x], titles)
-plt.xlabel('Title')
-plt.ylabel('Scores')
-
-# Set the title of the plot
-plt.title('Scores by Title')
-
-# Display the legend
-plt.legend()
-
-# Rotate the x-axis labels for better readability
-plt.xticks(rotation=45, ha='right')
-
-# Adjust the layout to prevent overlapping of labels
-plt.tight_layout()
-
-# Show the plot
-plt.show()
+        print(f"Game: {game}, Search Paths: {search_paths}, Mean Score: {mean_scores}")
+        x_pos = [(j * width) + i - offset for j in x]
+        handles.append(plt.bar(x_pos, mean_scores, width, color=colors))
+        labels.append(game)
+    
+    plt.xlabel('Game')
+    plt.ylabel('Mean Score')
+    plt.title(f'Mean Scores for "{title}"')
+    
+    # Set x-axis labels and tick positions
+    plt.xticks(range(num_games), games.keys())
+    plt.xticks(rotation=45, ha='right')
+    
+    # Create legend with search paths information
+    if legend:
+        legend_colors = [plt.Rectangle((0, 0), 1, 1, color=color) for color in colors]
+        plt.legend(legend_colors, search_paths, title='Search Paths')
+    
+    # Show the plot
+    plt.show()
