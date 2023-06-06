@@ -29,6 +29,21 @@ More Search Paths,4 Paths,DemonAttack,865.78125,4160.0,70.0,932.9130363535701
 More Search Paths,8 Paths,MsPacman,762.5,1250.0,420.0,331.8037823774768
 More Search Paths,8 Paths,Breakout,79.53125,249.0,14.0,91.30648401640214
 More Search Paths,8 Paths,DemonAttack,1183.4375,3825.0,60.0,1224.2615360264122
+Dynamic Branching,No Branching,MsPacman,415.9375,910.0,270.0,239.9200306221846
+Dynamic Branching,No Branching,Breakout,329.34375,375.0,278.0,42.107458792208064
+Dynamic Branching,No Branching,DemonAttack,1534.375,5670.0,175.0,1400.7200994042314
+Dynamic Branching,2 Paths,MsPacman,529.375,1140.0,290.0,226.78372819715264
+Dynamic Branching,2 Paths,Breakout,138.9375,425.0,32.0,104.35933639952871
+Dynamic Branching,2 Paths,DemonAttack,2404.21875,4850.0,235.0,1313.1499041992265
+Dynamic Branching,4 Paths,MsPacman,506.25,1210.0,160.0,272.8409564196695
+Dynamic Branching,4 Paths,Breakout,138.0625,415.0,30.0,109.64372345807124
+Dynamic Branching,4 Paths,DemonAttack,1959.53125,6010.0,130.0,1454.3610922062778
+Dynamic Branching,8 Paths,MsPacman,442.1875,860.0,170.0,185.95588144436303
+Dynamic Branching,8 Paths,Breakout,141.96875,403.0,29.0,89.71116303692367
+Dynamic Branching,8 Paths,DemonAttack,1914.375,5350.0,250.0,1157.7866478220415
+Naive vs Dynamic Branching,No Branching (1 path),MsPacman,415.9375,910.0,270.0,239.9200306221846
+Naive vs Dynamic Branching,No Branching (1 path),Breakout,329.34375,375.0,278.0,42.107458792208064
+Naive vs Dynamic Branching,No Branching (1 path),DemonAttack,1534.375,5670.0,175.0,1400.7200994042314
 Naive vs Dynamic Branching,Naive (2 Paths),MsPacman,383.125,500.0,230.0,88.68615661420897
 Naive vs Dynamic Branching,Naive (2 Paths),Breakout,44.4375,93.0,16.0,28.86058893629858
 Naive vs Dynamic Branching,Naive (2 Paths),DemonAttack,1671.5625,4510.0,140.0,1479.9263270831254
