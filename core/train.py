@@ -17,6 +17,8 @@ from core.storage import SharedStorage, QueueStorage
 from core.selfplay_worker import DataWorker
 from core.reanalyze_worker import BatchWorker_GPU, BatchWorker_CPU
 
+import matplotlib.pyplot as plt
+import random
 
 def consist_loss_func(f1, f2):
     """Consistency loss function: similarity loss
@@ -159,14 +161,96 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
                 # Create masked observations and target observations
                 masked_obs_batch = obs_batch_ori[:, :-config.image_channel].clone()
                 unmasked_obs_target_batch = masked_obs_batch.clone()
+
+                game = config.env_name.replace("NoFrameskip-v4", "")
+
+                #################################
+                # # Printing and saving images
+                # images = masked_obs_batch[:, 0:config.image_channel, :, :]
+                
+                # num_images = 20
+
+                # # Create the "observation_images" folder if it doesn't exist
+                # if not os.path.exists(f"images/{game}/observation_images"):
+                #     os.makedirs(f"images/{game}/observation_images")
+
+                # # Loop over the images and save them with the index in the title (Just 10)
+                # for i in range(num_images):
+                #     img = images[i].permute(1, 2, 0).detach().cpu().numpy()  # Convert tensor to numpy array and adjust dimensions
+                #     plt.imshow(img)
+                #     plt.axis('off')
+                #     plt.title(f"Image {i}")
+                #     plt.savefig(f"images/{game}/observation_images/image_{i}.png")
+                #     plt.close()
+                # input("Press Enter to continue...")
+                #################################
+
+
                 # do augmentations
                 if config.use_augmentation:
                     masked_obs_batch = config.transform(masked_obs_batch)
                     unmasked_obs_target_batch = config.transform(unmasked_obs_target_batch)
 
+
+                #################################
+                # # Printing and saving images (after transformations)
+                # images = masked_obs_batch[:, 0:config.image_channel, :, :]
+
+                # # Create the "transformed_images" folder if it doesn't exist
+                # if not os.path.exists(f"images/{game}/transformation_images"):
+                #     os.makedirs(f"images/{game}/transformation_images")
+
+                # # Loop over the images and save them with the index in the title (Just 10)
+                # for i in range(num_images):
+                #     img = images[i].permute(1, 2, 0).detach().cpu().numpy()  # Convert tensor to numpy array and adjust dimensions
+                #     plt.imshow(img)
+                #     plt.axis('off')
+                #     plt.title(f"Image {i}")
+                #     plt.savefig(f"images/{game}/transformation_images/image_{i}.png")
+                #     plt.close()
+                # input("Press Enter to continue...")
+                ###############################
+
+                
                 # Mask the masked_obs_batch
                 mask = model.masker().to(config.device)
+
+                # Don't mask top of Breakout or bottom of MsPacman
+                if game == "Breakout":
+                    if random.random() < 0.5:
+                        mask[:,:,:24,:] = 1 # Don't mask top (score/lives)
+                    else:
+                        mask[:,:,24:48,:] = 1 # Don't mask bricks
+                    
+                elif game == "MsPacman":
+                    mask[:,:,-24:,:] = 1
+
+                # Apply mask
                 masked_obs_batch = mask * masked_obs_batch
+
+                # Change mask from black to white
+                white_mask = (torch.ones_like(masked_obs_batch).to(config.device) - mask)
+                masked_obs_batch = masked_obs_batch + white_mask
+
+                ################################
+                # # Printing and saving images (after transformations)
+                # images = masked_obs_batch[:, 0:config.image_channel, :, :]
+
+                # # Create the "transformed_images" folder if it doesn't exist
+                # if not os.path.exists(f"images/{game}/masked_images"):
+                #     os.makedirs(f"images/{game}/masked_images")
+
+                # # Loop over the images and save them with the index in the title (Just 10)
+                # for i in range(num_images):
+                #     img = images[i].permute(1, 2, 0).detach().cpu().numpy()  # Convert tensor to numpy array and adjust dimensions
+                #     plt.imshow(img)
+                #     plt.axis('off')
+                #     plt.title(f"Image {i}")
+                #     plt.savefig(f"images/{game}/masked_images/image_{i}.png")
+                #     plt.close()
+                # input("Press Enter to continue...")
+                ###############################
+
 
                 ### Get representations of the masked and unmasked target observations
                 T = config.num_unroll_steps

@@ -417,9 +417,9 @@ class BaseConfig(object):
         if args.revisit_policy_search_rate is not None:
             self.revisit_policy_search_rate = args.revisit_policy_search_rate
 
-        localtime = time.asctime(time.localtime(time.time()))
-        seed_tag = 'seed={}'.format(self.seed)
-        self.exp_path = os.path.join(args.result_dir, args.case, args.info, args.env, seed_tag, "MLR", localtime)
+        self.exp_path = os.path.join("Final_Results", "Train", "New_Mask",\
+                                     args.env.replace("NoFrameskip-v4", ""))
+        input("Check that output path is correct: {}".format(self.exp_path))
 
         self.model_path = os.path.join(self.exp_path, 'model.p')
         self.model_dir = os.path.join(self.exp_path, 'model')
