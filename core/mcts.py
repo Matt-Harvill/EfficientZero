@@ -48,6 +48,8 @@ class MCTS(object):
             # print(hidden_state_pool[0][0][0].shape)
             # input('hidden_state_pool[0][0][0].shape')
 
+            all_avg_PUCT = []
+
             for index_simulation in range(self.config.num_simulations):
                 hidden_states = []
                 hidden_states_c_reward = []
@@ -55,8 +57,10 @@ class MCTS(object):
 
                 results = tree.ResultsWrapper(num, searches)
                 
-                hidden_state_index_x_lst, hidden_state_index_y_lst, hidden_state_index_z_lst, last_actions = tree.batch_traverse(roots, pb_c_base, pb_c_init, discount, min_max_stats_lst, results)
-                
+                hidden_state_index_x_lst, hidden_state_index_y_lst, hidden_state_index_z_lst, last_actions, avg_PUCT = tree.batch_traverse(roots, pb_c_base, pb_c_init, discount, min_max_stats_lst, results)
+                all_avg_PUCT.append(avg_PUCT)
+                # all_num_PUCT.append(num_PUCT)
+
                 num_searched = len(hidden_state_index_x_lst)
 
                 # print(hidden_state_index_x_lst, hidden_state_index_y_lst, hidden_state_index_z_lst, last_actions)
@@ -132,3 +136,14 @@ class MCTS(object):
                 
         # after_search = time.perf_counter()
         # print(f'search time: {after_search - before_search} seconds')
+        PUCT_info = f'avg PUCT: {np.mean(all_avg_PUCT)}'
+        print(PUCT_info)
+        input("After the search")
+
+        file_path = "PUCT/PUCT_scores.txt"
+
+        # Open the file in append mode
+        with open(file_path, "a") as file:
+            # Write the string to the file
+            file.write(f'{PUCT_info}\n')
+

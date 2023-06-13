@@ -9,9 +9,11 @@ namespace tree{
     CSearchResults::CSearchResults(){
         this->num = 0;
         this->searches = 1;
+        this->num_PUCT_scores = 0;
     }
 
     CSearchResults::CSearchResults(int num, int searches){
+        this->num_PUCT_scores = 0;
         this->num = num;
         this->searches = searches;
         for(int j = 0; j < searches; ++j){
@@ -463,7 +465,7 @@ namespace tree{
         }
     }
 
-    std::tuple<int, int> cselect_child(CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q){
+    std::tuple<int, int> cselect_child(CSearchResults* results, CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q){
         float max_score = FLOAT_MIN;
         float second_max_score = FLOAT_MIN;
         int max_action = -1;
@@ -521,9 +523,15 @@ namespace tree{
         // std::cout << "]" << std::endl;
 
         // Set second action to -1 if it is not close to best action
-        if (all_scores[max_action] - all_scores[second_action] > 0.1) {
-            second_action = -1;
-        }
+        // if (all_scores[max_action] - all_scores[second_action] > 0.1) {
+        //     second_action = -1;
+        // } else {
+            results->num_PUCT_scores += 1;
+            results->PUCT_average_score = (results->PUCT_average_score * (results->num_PUCT_scores - 1) + all_scores[second_action]) / results->num_PUCT_scores;
+        // }
+
+        results->num_PUCT_scores += 1;
+        results->PUCT_average_score = (results->PUCT_average_score * (results->num_PUCT_scores - 1) + all_scores[max_action]) / results->num_PUCT_scores;
 
         return std::make_tuple(max_action, second_action);
     }
@@ -554,7 +562,7 @@ namespace tree{
         return ucb_value;
     }
 
-    void cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results){
+    float cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results){
         // set seed
         timeval t1;
         gettimeofday(&t1, NULL);
@@ -595,7 +603,7 @@ namespace tree{
                 parent_qs[index] = mean_q;
 
                 // Get best two actions
-                std::tuple<int, int> actions = cselect_child(node, min_max_stats_lst->stats_lsts[index][i], pb_c_base, pb_c_init, discount, mean_q);
+                std::tuple<int, int> actions = cselect_child(&results, node, min_max_stats_lst->stats_lsts[index][i], pb_c_base, pb_c_init, discount, mean_q);
                 int best_action = std::get<0>(actions);
                 int second_best_action = std::get<1>(actions);
                 
@@ -630,7 +638,7 @@ namespace tree{
                     is_root = 0;
                     parent_qs[k] = mean_q;
 
-                    std::tuple<int, int> actions = cselect_child(node, min_max_stats_lst->stats_lsts[k][i], pb_c_base, pb_c_init, discount, mean_q);
+                    std::tuple<int, int> actions = cselect_child(&results, node, min_max_stats_lst->stats_lsts[k][i], pb_c_base, pb_c_init, discount, mean_q);
                     int best_action = std::get<0>(actions);
                     
                     node->best_action = best_action;
@@ -652,6 +660,7 @@ namespace tree{
             }
         }
         // results.print();
+        return results.PUCT_average_score;
     }
 
 }

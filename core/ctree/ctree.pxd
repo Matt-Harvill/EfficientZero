@@ -68,6 +68,7 @@ cdef extern from "cnode.h" namespace "tree":
         CSearchResults(int num, int searches) except +
 
         int num, searches
+        float PUCT_average_score, num_PUCT_scores
         vector[int] num_searched
         vector[vector[int]] hidden_state_index_x_lst, hidden_state_index_y_lst, hidden_state_index_z_lst, last_actions, search_lens
         vector[vector[CNode*]] nodes
@@ -76,4 +77,4 @@ cdef extern from "cnode.h" namespace "tree":
     cdef void cback_propagate(vector[CNode*] &search_path, CMinMaxStats &min_max_stats, int to_play, float value, float discount)
     void cbatch_back_propagate(int hidden_state_index_x, float discount, vector[vector[float]] value_prefixs, vector[vector[float]] values, vector[vector[vector[float]]] policies,
                                CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, vector[vector[int]] is_reset_lst)
-    void cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, CMinMaxStatsList *min_max_stats_lst, CSearchResults &results)
+    float cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, CMinMaxStatsList *min_max_stats_lst, CSearchResults &results)

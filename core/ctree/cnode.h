@@ -67,6 +67,7 @@ namespace tree {
     class CSearchResults{
         public:
             int num, searches;
+            float PUCT_average_score, num_PUCT_scores;
             std::vector<int> num_searched;
             std::vector<std::vector<int>> hidden_state_index_x_lst, hidden_state_index_y_lst, hidden_state_index_z_lst, last_actions, search_lens;
             std::vector<std::vector<CNode*>> nodes;
@@ -84,9 +85,9 @@ namespace tree {
     void update_tree_q(CNode* root, tools::CMinMaxStats &min_max_stats, float discount);
     void cback_propagate(std::vector<CNode*> &search_path, tools::CMinMaxStats &min_max_stats, int to_play, float value, float discount);
     void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<std::vector<float>> &value_prefixs, const std::vector<std::vector<float>> &values, const std::vector<std::vector<std::vector<float>>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<std::vector<int>> is_reset_lst);
-    std::tuple<int, int> cselect_child(CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q);
+    std::tuple<int, int> cselect_child(CSearchResults* results, CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q);
     float cucb_score(CNode *child, tools::CMinMaxStats &min_max_stats, float parent_mean_q, int is_reset, float total_children_visit_counts, float parent_value_prefix, float pb_c_base, float pb_c_init, float discount);
-    void cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results);
+    float cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results);
 }
 
 #endif
