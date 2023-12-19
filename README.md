@@ -1,3 +1,8 @@
+# Efficient(er)Zero
+This project was adapted from ["Mastering Atari Games with Limited Data"](https://arxiv.org/abs/2111.00210) at NeurIPS 2021 to increase inference efficiency by performing dynamic parallel MCTS. The original README is shown below:
+
+---
+
 # EfficientZero (NeurIPS 2021)
 Open-source codebase for EfficientZero, from ["Mastering Atari Games with Limited Data"](https://arxiv.org/abs/2111.00210) at NeurIPS 2021.
 
