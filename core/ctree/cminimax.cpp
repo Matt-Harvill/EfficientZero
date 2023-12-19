@@ -46,20 +46,27 @@ namespace tools{
 
     CMinMaxStatsList::CMinMaxStatsList(){
         this->num = 0;
+        this->searches = 1;
     }
 
-    CMinMaxStatsList::CMinMaxStatsList(int num){
+    CMinMaxStatsList::CMinMaxStatsList(int num, int searches){
         this->num = num;
-        for(int i = 0; i < num; ++i){
-            this->stats_lst.push_back(CMinMaxStats());
+        this->searches = searches;
+        for(int j = 0; j < searches; ++j){
+            this->stats_lsts.push_back(std::vector<CMinMaxStats>());
+            for(int i = 0; i < num; ++i){
+                this->stats_lsts[j].push_back(CMinMaxStats());
+            }
         }
     }
 
     CMinMaxStatsList::~CMinMaxStatsList(){}
 
     void CMinMaxStatsList::set_delta(float value_delta_max){
-        for(int i = 0; i < this->num; ++i){
-            this->stats_lst[i].set_delta(value_delta_max);
+        for(int j = 0; j < this->searches; ++j){
+            for(int i = 0; i < this->num; ++i){
+                this->stats_lsts[j][i].set_delta(value_delta_max);
+            }
         }
     }
 

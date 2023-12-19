@@ -16,8 +16,8 @@ ctypedef np.npy_intp INTP
 cdef class MinMaxStatsList:
     cdef CMinMaxStatsList *cmin_max_stats_lst
 
-    def __cinit__(self, int num):
-        self.cmin_max_stats_lst = new CMinMaxStatsList(num)
+    def __cinit__(self, int num, int searches):
+        self.cmin_max_stats_lst = new CMinMaxStatsList(num, searches)
 
     def set_delta(self, float value_delta_max):
         self.cmin_max_stats_lst[0].set_delta(value_delta_max)
@@ -29,8 +29,15 @@ cdef class MinMaxStatsList:
 cdef class ResultsWrapper:
     cdef CSearchResults cresults
 
-    def __cinit__(self, int num):
-        self.cresults = CSearchResults(num)
+    def __cinit__(self, int num, int searches):
+        self.cresults = CSearchResults(num, searches)
+
+    # def print_results(self):
+    #     self.cresults.print()
+
+    # def print_nodes(self):
+    #     for node in self.cresults.nodes:
+    #         print(node.value(), node.get_trajectory(), node.get_children_distribution())
 
     def get_search_len(self):
         return self.cresults.search_lens
@@ -58,6 +65,9 @@ cdef class Roots:
     def get_distributions(self):
         return self.roots[0].get_distributions()
 
+    def get_children_values(self):
+        return self.roots[0].get_children_values()
+
     def get_values(self):
         return self.roots[0].get_values()
 
@@ -82,15 +92,15 @@ cdef class Node:
         # self.cnode = CNode(prior, action_num)
         pass
 
-    def expand(self, int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefix, list policy_logits):
+    def expand(self, int to_play, int hidden_state_index_x, int hidden_state_index_y, int hidden_state_index_z, float value_prefix, list policy_logits):
         cdef vector[float] cpolicy = policy_logits
-        self.cnode.expand(to_play, hidden_state_index_x, hidden_state_index_y, value_prefix, cpolicy)
+        self.cnode.expand(to_play, hidden_state_index_x, hidden_state_index_y, hidden_state_index_z, value_prefix, cpolicy)
 
 def batch_back_propagate(int hidden_state_index_x, float discount, list value_prefixs, list values, list policies, MinMaxStatsList min_max_stats_lst, ResultsWrapper results, list is_reset_lst):
     cdef int i
-    cdef vector[float] cvalue_prefixs = value_prefixs
-    cdef vector[float] cvalues = values
-    cdef vector[vector[float]] cpolicies = policies
+    cdef vector[vector[float]] cvalue_prefixs = value_prefixs
+    cdef vector[vector[float]] cvalues = values
+    cdef vector[vector[vector[float]]] cpolicies = policies
 
     cbatch_back_propagate(hidden_state_index_x, discount, cvalue_prefixs, cvalues, cpolicies,
                           min_max_stats_lst.cmin_max_stats_lst, results.cresults, is_reset_lst)
@@ -98,6 +108,7 @@ def batch_back_propagate(int hidden_state_index_x, float discount, list value_pr
 
 def batch_traverse(Roots roots, int pb_c_base, float pb_c_init, float discount, MinMaxStatsList min_max_stats_lst, ResultsWrapper results):
 
-    cbatch_traverse(roots.roots, pb_c_base, pb_c_init, discount, min_max_stats_lst.cmin_max_stats_lst, results.cresults)
+    average_PUCT_score = cbatch_traverse(roots.roots, pb_c_base, pb_c_init, discount, min_max_stats_lst.cmin_max_stats_lst, results.cresults)
 
-    return results.cresults.hidden_state_index_x_lst, results.cresults.hidden_state_index_y_lst, results.cresults.last_actions
+    return results.cresults.hidden_state_index_x_lst, results.cresults.hidden_state_index_y_lst, \
+        results.cresults.hidden_state_index_z_lst, results.cresults.last_actions, average_PUCT_score

@@ -1,20 +1,111 @@
 #include <iostream>
 #include "cnode.h"
+#include <queue>
+#include <algorithm>
+#include <iomanip>
 
 namespace tree{
 
     CSearchResults::CSearchResults(){
         this->num = 0;
+        this->searches = 1;
+        this->num_PUCT_scores = 0;
     }
 
-    CSearchResults::CSearchResults(int num){
+    CSearchResults::CSearchResults(int num, int searches){
+        this->num_PUCT_scores = 0;
         this->num = num;
-        for(int i = 0; i < num; ++i){
-            this->search_paths.push_back(std::vector<CNode*>());
+        this->searches = searches;
+        for(int j = 0; j < searches; ++j){
+            // Create search paths for search j
+            this->search_paths.push_back(std::vector<std::vector<CNode*>>());
+            for(int i = 0; i < num; ++i){
+                // Create num paths for search j
+                this->search_paths[j].push_back(std::vector<CNode*>());
+            }
+            this->hidden_state_index_x_lst.push_back(std::vector<int>(num, -1));
+            this->hidden_state_index_y_lst.push_back(std::vector<int>(num, -1));
+            this->hidden_state_index_z_lst.push_back(std::vector<int>(num, -1));
+            this->last_actions.push_back(std::vector<int>(num, -1));
+            this->search_lens.push_back(std::vector<int>(num, -1));
+            this->nodes.push_back(std::vector<CNode*>(num, nullptr));
         }
     }
 
     CSearchResults::~CSearchResults(){}
+
+    void CSearchResults::print() {
+        std::cout << "num: " << num << std::endl;
+        std::cout << "searches: " << searches << std::endl;
+
+        // Print hidden_state_index_x_lst
+        std::cout << "hidden_state_index_x_lst:" << std::endl;
+        for (const auto& row : hidden_state_index_x_lst) {
+            for (const auto& value : row) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print hidden_state_index_y_lst
+        std::cout << "hidden_state_index_y_lst:" << std::endl;
+        for (const auto& row : hidden_state_index_y_lst) {
+            for (const auto& value : row) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print hidden_state_index_z_lst
+        std::cout << "hidden_state_index_z_lst:" << std::endl;
+        for (const auto& row : hidden_state_index_z_lst) {
+            for (const auto& value : row) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print last_actions
+        std::cout << "last_actions:" << std::endl;
+        for (const auto& row : last_actions) {
+            for (const auto& value : row) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print search_lens
+        std::cout << "search_lens:" << std::endl;
+        for (const auto& row : search_lens) {
+            for (const auto& value : row) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print nodes
+        std::cout << "nodes:" << std::endl;
+        for (const auto& row : nodes) {
+            for (const auto& value : row) {
+                value->print();
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print search_paths
+        std::cout << "search_paths:" << std::endl;
+        for (const auto& plane : search_paths) {
+            for (const auto& row : plane) {
+                for (const auto& value : row) {
+                    value->print();
+                    std::cout << value << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    }
 
     //*********************************************************
 
@@ -44,14 +135,41 @@ namespace tree{
         this->ptr_node_pool = ptr_node_pool;
         this->hidden_state_index_x = -1;
         this->hidden_state_index_y = -1;
+        this->hidden_state_index_z = -1;
     }
 
     CNode::~CNode(){}
 
-    void CNode::expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, float value_prefix, const std::vector<float> &policy_logits){
+    void CNode::print() {
+        std::cout << "visit_count: " << visit_count << std::endl;
+        std::cout << "to_play: " << to_play << std::endl;
+        std::cout << "action_num: " << action_num << std::endl;
+        std::cout << "hidden_state_index_x: " << hidden_state_index_x << std::endl;
+        std::cout << "hidden_state_index_y: " << hidden_state_index_y << std::endl;
+        std::cout << "hidden_state_index_z: " << hidden_state_index_z << std::endl;
+        std::cout << "best_action: " << best_action << std::endl;
+        std::cout << "is_reset: " << is_reset << std::endl;
+        std::cout << "value_prefix: " << value_prefix << std::endl;
+        std::cout << "prior: " << prior << std::endl;
+        std::cout << "value_sum: " << value_sum << std::endl;
+
+        std::cout << "children_index: ";
+        for (const auto& index : children_index) {
+            std::cout << index << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "children_index.size(): ";
+        std::cout << children_index.size() << std::endl;
+
+        std::cout << "ptr_node_pool: " << ptr_node_pool << std::endl;
+        std::cout << "ptr_node_pool->size(): " << ptr_node_pool->size() << std::endl;
+    }
+
+    void CNode::expand(int to_play, int hidden_state_index_x, int hidden_state_index_y, int hidden_state_index_z, float value_prefix, const std::vector<float> &policy_logits){
         this->to_play = to_play;
         this->hidden_state_index_x = hidden_state_index_x;
         this->hidden_state_index_y = hidden_state_index_y;
+        this->hidden_state_index_z = hidden_state_index_z;
         this->value_prefix = value_prefix;
 
         int action_num = this->action_num;
@@ -170,6 +288,17 @@ namespace tree{
         return distribution;
     }
 
+    std::vector<float> CNode::get_children_values(){
+        std::vector<float> values;
+        if(this->expanded()){
+            for(int a = 0; a < this->action_num; ++a){
+                CNode* child = this->get_child(a);
+                values.push_back(child->value());
+            }
+        }
+        return values;
+    }
+
     CNode* CNode::get_child(int action){
         int index = this->children_index[action];
         return &((*(this->ptr_node_pool))[index]);
@@ -203,7 +332,7 @@ namespace tree{
 
     void CRoots::prepare(float root_exploration_fraction, const std::vector<std::vector<float>> &noises, const std::vector<float> &value_prefixs, const std::vector<std::vector<float>> &policies){
         for(int i = 0; i < this->root_num; ++i){
-            this->roots[i].expand(0, 0, i, value_prefixs[i], policies[i]);
+            this->roots[i].expand(0, 0, i, 0, value_prefixs[i], policies[i]);
             this->roots[i].add_exploration_noise(root_exploration_fraction, noises[i]);
 
             this->roots[i].visit_count += 1;
@@ -212,7 +341,7 @@ namespace tree{
 
     void CRoots::prepare_no_noise(const std::vector<float> &value_prefixs, const std::vector<std::vector<float>> &policies){
         for(int i = 0; i < this->root_num; ++i){
-            this->roots[i].expand(0, 0, i, value_prefixs[i], policies[i]);
+            this->roots[i].expand(0, 0, i, 0, value_prefixs[i], policies[i]);
 
             this->roots[i].visit_count += 1;
         }
@@ -241,6 +370,16 @@ namespace tree{
             distributions.push_back(this->roots[i].get_children_distribution());
         }
         return distributions;
+    }
+
+    std::vector<std::vector<float>> CRoots::get_children_values(){
+        std::vector<std::vector<float>> values;
+        values.reserve(this->root_num);
+
+        for(int i = 0; i < this->root_num; ++i){
+            values.push_back(this->roots[i].get_children_values());
+        }
+        return values;
     }
 
     std::vector<float> CRoots::get_values(){
@@ -314,41 +453,87 @@ namespace tree{
         update_tree_q(root, min_max_stats, discount);
     }
 
-    void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<float> &value_prefixs, const std::vector<float> &values, const std::vector<std::vector<float>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<int> is_reset_lst){
+    void cbatch_back_propagate(int hidden_state_index_x, float discount, const std::vector<std::vector<float>> &value_prefixs, const std::vector<std::vector<float>> &values, const std::vector<std::vector<std::vector<float>>> &policies, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results, std::vector<std::vector<int>> is_reset_lst){
         for(int i = 0; i < results.num; ++i){
-            results.nodes[i]->expand(0, hidden_state_index_x, i, value_prefixs[i], policies[i]);
-            // reset
-            results.nodes[i]->is_reset = is_reset_lst[i];
+            for(int j = 0; j < results.num_searched[i]; ++j){
+                results.nodes[j][i]->expand(0, hidden_state_index_x, i, j, value_prefixs[j][i], policies[j][i]);
+                // reset
+                results.nodes[j][i]->is_reset = is_reset_lst[j][i];
 
-            cback_propagate(results.search_paths[i], min_max_stats_lst->stats_lst[i], 0, values[i], discount);
+                cback_propagate(results.search_paths[j][i], min_max_stats_lst->stats_lsts[j][i], 0, values[j][i], discount);
+            }
         }
     }
 
-    int cselect_child(CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q){
+    std::tuple<int, int> cselect_child(CSearchResults* results, CNode* root, tools::CMinMaxStats &min_max_stats, int pb_c_base, float pb_c_init, float discount, float mean_q){
         float max_score = FLOAT_MIN;
+        float second_max_score = FLOAT_MIN;
+        int max_action = -1;
+        int prev_max_a = -1;
         const float epsilon = 0.000001;
-        std::vector<int> max_index_lst;
+        std::vector<int> second_max_index_lst;
+        std::vector<float> all_scores;
+
         for(int a = 0; a < root->action_num; ++a){
             CNode* child = root->get_child(a);
             float temp_score = cucb_score(child, min_max_stats, mean_q, root->is_reset, root->visit_count - 1, root->value_prefix, pb_c_base, pb_c_init, discount);
 
-            if(max_score < temp_score){
-                max_score = temp_score;
+            if(second_max_score < temp_score){
+                if(max_score < temp_score){
+                    second_max_score = max_score;
+                    max_score = temp_score;
+                    bool max_action_exist = max_action >= 0;
+                    prev_max_a = max_action;
+                    max_action = a;
 
-                max_index_lst.clear();
-                max_index_lst.push_back(a);
+                    second_max_index_lst.clear();
+                    if (max_action_exist) {
+                        second_max_index_lst.push_back(prev_max_a);
+                    }
+                } else {
+                    if (temp_score >= second_max_score + epsilon) {
+                        second_max_index_lst.clear();
+                        second_max_score = temp_score;
+                    } else {
+                        second_max_index_lst.push_back(a);
+                    }
+                }
+            } else if(temp_score >= second_max_score - epsilon){
+                second_max_index_lst.push_back(a);
             }
-            else if(temp_score >= max_score - epsilon){
-                max_index_lst.push_back(a);
-            }
+
+            all_scores.push_back(temp_score);
         }
 
-        int action = 0;
-        if(max_index_lst.size() > 0){
-            int rand_index = rand() % max_index_lst.size();
-            action = max_index_lst[rand_index];
+        // Set second action
+        int second_action = 0;
+        if(second_max_index_lst.size() > 0){
+            int rand_index = rand() % second_max_index_lst.size();
+            second_action = second_max_index_lst[rand_index];
         }
-        return action;
+
+        // Print the scores in the desired format
+        // std::cout << "ucb scores: [";
+        // for (size_t i = 0; i < all_scores.size(); ++i) {
+        //     std::cout << std::fixed << std::setprecision(4) << all_scores[i];
+        //     if (i != all_scores.size() - 1) {
+        //         std::cout << ", ";
+        //     }
+        // }
+        // std::cout << "]" << std::endl;
+
+        // Set second action to -1 if it is not close to best action
+        // if (all_scores[max_action] - all_scores[second_action] > 0.1) {
+        //     second_action = -1;
+        // } else {
+            results->num_PUCT_scores += 1;
+            results->PUCT_average_score = (results->PUCT_average_score * (results->num_PUCT_scores - 1) + all_scores[second_action]) / results->num_PUCT_scores;
+        // }
+
+        results->num_PUCT_scores += 1;
+        results->PUCT_average_score = (results->PUCT_average_score * (results->num_PUCT_scores - 1) + all_scores[max_action]) / results->num_PUCT_scores;
+
+        return std::make_tuple(max_action, second_action);
     }
 
     float cucb_score(CNode *child, tools::CMinMaxStats &min_max_stats, float parent_mean_q, int is_reset, float total_children_visit_counts, float parent_value_prefix, float pb_c_base, float pb_c_init, float discount){
@@ -377,44 +562,105 @@ namespace tree{
         return ucb_value;
     }
 
-    void cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results){
+    float cbatch_traverse(CRoots *roots, int pb_c_base, float pb_c_init, float discount, tools::CMinMaxStatsList *min_max_stats_lst, CSearchResults &results){
         // set seed
         timeval t1;
         gettimeofday(&t1, NULL);
         srand(t1.tv_usec);
 
-        int last_action = -1;
-        float parent_q = 0.0;
-        results.search_lens = std::vector<int>();
-        for(int i = 0; i < results.num; ++i){
+        int searches = results.searches;
+        int num = results.num;
+
+        for(int i = 0; i < num; ++i){
+
+            int j = 0; // search number
+            std::vector<float> parent_qs(searches, 0.0);
+
+            // Handle root node
             CNode *node = &(roots->roots[i]);
             int is_root = 1;
-            int search_len = 0;
-            results.search_paths[i].push_back(node);
+            results.search_paths[j][i].push_back(node);
 
-            while(node->expanded()){
-                float mean_q = node->get_mean_q(is_root, parent_q, discount);
+            // For keeping track of nodes in searches
+            std::queue<std::tuple<CNode*, int>> nodes;
+            nodes.push(std::make_tuple(node, 0));
+
+            // Get the nodes to be searched
+            while(j < searches - 1 && nodes.size() > 0){
+                // Pop off the queue
+                std::tuple<CNode*, int> node_tuple = nodes.front();
+                nodes.pop();
+                CNode *node = std::get<0>(node_tuple);
+                int index = std::get<1>(node_tuple);
+
+                if(!(node->expanded())){
+                    continue;
+                }
+
+                // Calculate mean_q for selecting best actions
+                float mean_q = node->get_mean_q(is_root, parent_qs[index], discount);
                 is_root = 0;
-                parent_q = mean_q;
+                parent_qs[index] = mean_q;
 
-                int action = cselect_child(node, min_max_stats_lst->stats_lst[i], pb_c_base, pb_c_init, discount, mean_q);
-                node->best_action = action;
-                // next
-                node = node->get_child(action);
-                last_action = action;
-                results.search_paths[i].push_back(node);
-                search_len += 1;
+                // Get best two actions
+                std::tuple<int, int> actions = cselect_child(&results, node, min_max_stats_lst->stats_lsts[index][i], pb_c_base, pb_c_init, discount, mean_q);
+                int best_action = std::get<0>(actions);
+                int second_best_action = std::get<1>(actions);
+                
+                // Set best_action
+                node->best_action = best_action;
+                // Add new node for top action
+                nodes.push(std::make_tuple(node->get_child(best_action), index));
+                // Add new action node to path
+                results.search_paths[index][i].push_back(node->get_child(best_action));
+
+                // Add new node for second best action if close to top action
+                if (second_best_action != -1) {
+                    nodes.push(std::make_tuple(node->get_child(second_best_action), j + 1));
+
+                    // Copy info from index to j + 1
+                    results.search_paths[j + 1][i] = results.search_paths[index][i];
+                    parent_qs[j + 1] = parent_qs[index];
+                    min_max_stats_lst->stats_lsts[j + 1][i] = min_max_stats_lst->stats_lsts[index][i];
+                    results.search_paths[j + 1][i].push_back(node->get_child(second_best_action));
+                    j++;
+                }
             }
 
-            CNode* parent = results.search_paths[i][results.search_paths[i].size() - 2];
+            int num_searched = j + 1;
+            results.num_searched.push_back(num_searched);
 
-            results.hidden_state_index_x_lst.push_back(parent->hidden_state_index_x);
-            results.hidden_state_index_y_lst.push_back(parent->hidden_state_index_y);
+            for(int k = 0; k < num_searched; ++k){
+                CNode *node = results.search_paths[k][i].back();
 
-            results.last_actions.push_back(last_action);
-            results.search_lens.push_back(search_len);
-            results.nodes.push_back(node);
+                while(node->expanded()){
+                    float mean_q = node->get_mean_q(is_root, parent_qs[k], discount);
+                    is_root = 0;
+                    parent_qs[k] = mean_q;
+
+                    std::tuple<int, int> actions = cselect_child(&results, node, min_max_stats_lst->stats_lsts[k][i], pb_c_base, pb_c_init, discount, mean_q);
+                    int best_action = std::get<0>(actions);
+                    
+                    node->best_action = best_action;
+                    // next
+                    node = node->get_child(best_action);
+                    results.search_paths[k][i].push_back(node);
+                }
+
+                int search_len = results.search_paths[k][i].size();
+                CNode* parent = results.search_paths[k][i][search_len - 2];
+
+                results.hidden_state_index_x_lst[k][i] = (parent->hidden_state_index_x);
+                results.hidden_state_index_y_lst[k][i] = (parent->hidden_state_index_y);
+                results.hidden_state_index_z_lst[k][i] = (parent->hidden_state_index_z);
+
+                results.last_actions[k][i] = (parent->best_action);
+                results.search_lens[k][i] = (search_len);
+                results.nodes[k][i] = (node);
+            }
         }
+        // results.print();
+        return results.PUCT_average_score;
     }
 
 }
